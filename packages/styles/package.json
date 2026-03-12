@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/styles",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Pre-compiled popular CSL styles (~3-5KB each)",
   "type": "module",
   "exports": {
@@ -31,7 +31,7 @@
     "prepack": "node build.js"
   },
   "dependencies": {
-    "@citestyle/core": "^0.0.2"
+    "@citestyle/core": "workspace:*"
   },
   "license": "MIT"
 }
