@@ -1,0 +1,13 @@
+{
+  "name": "@citestyle/types",
+  "version": "0.0.1",
+  "description": "TypeScript type definitions for CSL-JSON, compiled styles, and registry",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts"
+    }
+  },
+  "files": ["*.d.ts", "README.md"],
+  "license": "MIT"
+}

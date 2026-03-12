@@ -1,0 +1,26 @@
+{
+  "name": "@citestyle/styles",
+  "version": "0.0.1",
+  "description": "Pre-compiled popular CSL styles (~3-5KB each)",
+  "type": "module",
+  "exports": {
+    "./apa": "./apa.js",
+    "./mla": "./mla.js",
+    "./chicago-author-date": "./chicago-author-date.js",
+    "./ieee": "./ieee.js",
+    "./vancouver": "./vancouver.js",
+    "./harvard": "./harvard.js",
+    "./ama": "./ama.js",
+    "./turabian": "./turabian.js",
+    "./nature": "./nature.js",
+    "./science": "./science.js"
+  },
+  "files": ["*.js", "README.md"],
+  "scripts": {
+    "build": "echo 'TODO: compile styles from CSL sources'"
+  },
+  "dependencies": {
+    "@citestyle/core": "workspace:*"
+  },
+  "license": "MIT"
+}

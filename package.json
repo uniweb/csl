@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.1",
+    "typescript": "^5.8.2"
+  }
+}

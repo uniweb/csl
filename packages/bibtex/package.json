@@ -1,0 +1,24 @@
+{
+  "name": "@citestyle/bibtex",
+  "version": "0.0.1",
+  "description": "BibTeX ↔ CSL-JSON parser",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": ["src", "README.md"],
+  "scripts": {
+    "test": "vitest run",
+    "lint": "echo 'TODO: configure linter'"
+  },
+  "dependencies": {
+    "@citestyle/types": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "license": "MIT"
+}

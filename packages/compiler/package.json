@@ -1,0 +1,27 @@
+{
+  "name": "@citestyle/compiler",
+  "version": "0.0.1",
+  "description": "Build-time compiler: CSL XML → JavaScript modules",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "citestyle": "./src/cli.js"
+  },
+  "files": ["src", "README.md"],
+  "scripts": {
+    "test": "vitest run",
+    "lint": "echo 'TODO: configure linter'"
+  },
+  "dependencies": {
+    "@citestyle/types": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "license": "MIT"
+}

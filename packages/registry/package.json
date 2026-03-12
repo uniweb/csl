@@ -1,0 +1,25 @@
+{
+  "name": "@citestyle/registry",
+  "version": "0.0.1",
+  "description": "Citation registry: year-suffixes, numbering, sorting (~5-8KB)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": ["src", "README.md"],
+  "scripts": {
+    "test": "vitest run",
+    "lint": "echo 'TODO: configure linter'"
+  },
+  "dependencies": {
+    "@citestyle/core": "workspace:*",
+    "@citestyle/types": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "license": "MIT"
+}
