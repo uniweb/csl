@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/registry",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Citation registry: year-suffixes, numbering, sorting (~5-8KB)",
   "type": "module",
   "exports": {
@@ -9,7 +9,11 @@
       "import": "./src/index.js"
     }
   },
-  "files": ["src", "types.d.ts", "README.md"],
+  "files": [
+    "src",
+    "types.d.ts",
+    "README.md"
+  ],
   "scripts": {
     "test": "vitest run --passWithNoTests",
     "lint": "echo 'TODO: configure linter'"

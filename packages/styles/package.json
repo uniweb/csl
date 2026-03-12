@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/styles",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Pre-compiled popular CSL styles (~3-5KB each)",
   "type": "module",
   "exports": {
@@ -17,10 +17,16 @@
   },
   "typesVersions": {
     "*": {
-      "*": ["./types.d.ts"]
+      "*": [
+        "./types.d.ts"
+      ]
     }
   },
-  "files": ["*.js", "types.d.ts", "README.md"],
+  "files": [
+    "*.js",
+    "types.d.ts",
+    "README.md"
+  ],
   "scripts": {
     "build": "echo 'TODO: compile styles from CSL sources'"
   },

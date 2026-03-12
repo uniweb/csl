@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/bibtex",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "BibTeX ↔ CSL-JSON parser and serializer",
   "type": "module",
   "exports": {
@@ -9,7 +9,11 @@
       "import": "./src/index.js"
     }
   },
-  "files": ["src", "types.d.ts", "README.md"],
+  "files": [
+    "src",
+    "types.d.ts",
+    "README.md"
+  ],
   "scripts": {
     "test": "vitest run --passWithNoTests",
     "lint": "echo 'TODO: configure linter'"

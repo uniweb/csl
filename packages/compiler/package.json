@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/compiler",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Build-time compiler: CSL XML → JavaScript modules",
   "type": "module",
   "exports": {

@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/core",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Shared runtime helpers for compiled CSL styles (~6-8KB)",
   "type": "module",
   "exports": {
@@ -9,7 +9,11 @@
       "import": "./src/index.js"
     }
   },
-  "files": ["src", "types.d.ts", "README.md"],
+  "files": [
+    "src",
+    "types.d.ts",
+    "README.md"
+  ],
   "scripts": {
     "test": "vitest run",
     "lint": "echo 'TODO: configure linter'"
