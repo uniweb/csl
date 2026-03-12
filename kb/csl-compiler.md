@@ -80,6 +80,15 @@ This is explicitly **not** targeting journal-submission formatting (where citepr
 │  BibTeX → CSL-JSON    RIS → CSL-JSON                  │
 │  DOI → CSL-JSON       CrossRef API → CSL-JSON         │
 └──────────────────────────────────────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────────────┐
+│                    EXPORT LAYER (optional)             │
+│                                                        │
+│  FormattedEntry → Clipboard (plain text / rich text)  │
+│  CSL-JSON → BibTeX string   CSL-JSON → RIS string     │
+│  Download helper (Blob → .bib / .ris / .json)         │
+└──────────────────────────────────────────────────────┘
 ```
 
 ### Layer 1: The Compiler (`@citestyle/compiler`)
@@ -333,6 +342,40 @@ Independent modules for converting between formats:
 
 Each is optional — import only what your project needs. The compiler itself only cares about CSL-JSON input; parsers are convenience.
 
+### Layer 4: Citation Export (`@citestyle/export`)
+
+The "copy citation" UX is ubiquitous on academic websites — Google Scholar, Semantic Scholar, publisher pages all offer it. This requires the reverse of parsing: converting formatted entries and CSL-JSON items into clipboard-ready or download-ready output in multiple formats.
+
+```javascript
+import { copyPlainText, copyRichText, exportBibtex, exportRis, exportCslJson } from '@citestyle/export'
+
+// Copy formatted citation to clipboard (plain text)
+await copyPlainText(entry)  // Uses entry.text
+
+// Copy with formatting preserved (rich text)
+await copyRichText(entry)   // Uses entry.html → clipboard as text/html
+
+// Export for reference managers
+const bibtex = exportBibtex(items)     // CSL-JSON → BibTeX string
+const ris = exportRis(items)           // CSL-JSON → RIS string
+const json = exportCslJson(items)      // CSL-JSON → formatted JSON string
+
+// Download helpers
+import { downloadFile } from '@citestyle/export'
+downloadFile(bibtex, 'references.bib', 'application/x-bibtex')
+downloadFile(ris, 'references.ris', 'application/x-research-info-systems')
+```
+
+**Architecture:**
+- **Clipboard helpers** — `copyPlainText(entry)` and `copyRichText(entry)` wrap the Clipboard API, handling the `text/plain` and `text/html` MIME types. The rich-text copy preserves italic, bold, and link formatting when pasting into Word, Google Docs, etc.
+- **Format serializers** — `exportBibtex()` is the reverse of `@citestyle/bibtex`'s parser: CSL-JSON → BibTeX string. `exportRis()` serializes to RIS format. `exportCslJson()` is trivial but included for completeness and consistent API.
+- **Download helpers** — `downloadFile(content, filename, mimeType)` creates a Blob URL and triggers a download. Framework-agnostic (no React dependency).
+- **Format registry** — `getFormats()` returns available export formats with labels, useful for building format picker UIs. Extensible — consumers can register custom formats.
+
+**Why a separate package?** Export is optional — many sites only display bibliographies without offering copy/download. Keeping it separate (~2-3KB) means sites that don't need it pay nothing. It also has a browser-only dependency (Clipboard API, Blob/URL) that server-side packages shouldn't carry.
+
+**Relationship to `@citestyle/bibtex`:** The bibtex package focuses on *parsing* (BibTeX → CSL-JSON). The export package handles *serialization* (CSL-JSON → BibTeX). These could share field-mapping tables, but the serialization direction and use case are different enough to justify separate packages. The bibtex package's `export.js` handles the low-level field mapping; `@citestyle/export` wraps it with clipboard and download UX.
+
 ## Package Structure
 
 ```
@@ -380,6 +423,14 @@ Each is optional — import only what your project needs. The compiler itself on
 │   │   └── export.js
 │   └── package.json
 │
+├── export/             # Multi-format citation export (~2-3KB)
+│   ├── src/
+│   │   ├── clipboard.js  # copyPlainText(), copyRichText()
+│   │   ├── formats.js    # exportBibtex(), exportRis(), exportCslJson()
+│   │   ├── download.js   # downloadFile() helper
+│   │   └── index.js
+│   └── package.json
+│
 ├── types/              # TypeScript type definitions
 │   ├── csl-json.d.ts   # CSL-JSON item schema
 │   ├── style.d.ts      # Compiled style module interface
@@ -393,7 +444,7 @@ Each is optional — import only what your project needs. The compiler itself on
     └── package.json
 ```
 
-**Naming:** Published under the `@citestyle` scope on npm — a vendor-neutral name that signals a community tool for the CSL ecosystem, not a Uniweb-specific package. Repository at `github.com/uniweb/csl`. The compiler reads standard `.csl` files from the official CSL styles repository — full interoperability. The `core` + `registry` split keeps the runtime minimal: sites that only need bibliography formatting (no inline citations, no disambiguation) can skip the registry entirely and use compiled styles + core alone.
+**Naming:** Published under the `@citestyle` scope on npm — a vendor-neutral name that signals a community tool for the CSL ecosystem, not a Uniweb-specific package. Repository at `github.com/uniweb/csl`. The compiler reads standard `.csl` files from the official CSL styles repository — full interoperability. The `core` + `registry` split keeps the runtime minimal: sites that only need bibliography formatting (no inline citations, no disambiguation) can skip the registry entirely and use compiled styles + core alone. The `export` package is optional — only needed for sites offering "copy citation" or download functionality.
 
 ## CSL Spec Coverage
 
@@ -939,6 +990,7 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 - [ ] Published to npm under `@citestyle/*` scope
 - [ ] Documentation with examples and migration guide
 - [ ] Web display styles: `compact` and `card` rendering modes
+- [ ] `@citestyle/export`: clipboard copy (plain text + rich text), BibTeX/RIS/CSL-JSON export, file download
 
 ### Post-v1
 
@@ -949,6 +1001,8 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 - [ ] Registry plugins: ibid, full disambiguation, cite collapsing
 - [ ] RIS and DOI parsers in `@citestyle/ris`, `@citestyle/doi`
 - [ ] CrossRef/OpenAlex metadata fetching (auto-populate extended metadata)
+- [ ] Search/filter utilities — fuzzy search over bibliography items by author, title, year, keywords (likely a registry extension or standalone utility)
+- [ ] Sort/group utilities — group bibliography by year, type, or first author; sort by any field (registry already sorts for bibliography, but consumer-facing grouping is different)
 - [ ] Online playground (compile + preview in browser)
 - [ ] Community contributions: new styles, locale fixes, edge-case reports
 
