@@ -449,10 +449,15 @@ These constructs compile to efficient JS and cover the vast majority of real-wor
 | Feature | Why deferred | Path to add later |
 |---|---|---|
 | **ibid / subsequent / near-note** | Footnote-centric — not applicable to most web content | Registry plugin for note styles |
-| **Full name disambiguation** | Complex multi-pass algorithm, low value for web (links resolve ambiguity) | Registry plugin with `disambiguate-add-givenname` |
-| **Cite collapsing / grouping** | Numeric range compression (`[1-3]`), author grouping | Registry extension |
 | **is-uncertain-date** | Rare in practice | Conditional branch in compiler |
 | **CSL-M extensions** | Legal/multilingual — different spec entirely | Separate compiler flag |
+
+### Previously deferred, now implemented
+
+| Feature | Implemented in | Notes |
+|---|---|---|
+| **Full name disambiguation** | v0.6 (registry) | `disambiguate-add-givenname` (5 rules) + `disambiguate-add-names` |
+| **Cite collapsing / grouping** | v0.5 + v0.6 (registry) | Numeric range compression (`[1–3]`), author-date grouping (`collapse="year"/"year-suffix"`) |
 
 ### Explicitly out of scope
 
@@ -823,13 +828,30 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 8. **Cite collapsing lives in the registry, not codegen.** The compiled style renders individual citations; the registry wraps them. For collapsing, the registry renders one citation to detect prefix/suffix format, builds collapsed number strings, then assembles the final output. This avoids modifying codegen for a cross-citation concern.
 9. **Date variables need special sort key extraction.** `<key variable="issued">` can't use `String(item.issued)` because `issued` is a date object `{ 'date-parts': [[2024, 3, 15]] }`. Sort keys for date variables extract `YYYYMMDD` from date-parts.
 
-### v0.6 — Full name disambiguation + more styles (next)
+### v0.6 — Name disambiguation + author-date collapsing + 20 styles ✅
+
+**Completed.** 20 styles compile. Full name disambiguation and author-date cite collapsing in registry. Sentence-case acronym preservation. 320 tests total.
+
+- **Name disambiguation**: `disambiguate-add-givenname` with 5 rules (`by-cite`, `all-names`, `all-names-with-initials`, `primary-name`, `primary-name-with-initials`). `disambiguate-add-names` expands et-al progressively. Per-cite `_disambig` context object flows through compiled code into `formatNames`. Registry detects collisions via `runDisambiguation()`, applies givenname expansion then name expansion, stores results in `disambigState` Map.
+- **Author-date collapsing**: `collapse="year"` and `collapse="year-suffix"` group consecutive same-author cites. `cite-group-delimiter` support. Registry renders each cite individually, strips layout prefix/suffix, groups by `authorOnlyKey` (family names only), reconstructs collapsed output.
+- **5 new styles**: APSA, ASA (6th/7th), Annual Reviews, RSC, DGPs (German, de-DE locale).
+- **Sentence-case acronym preservation**: All-uppercase words (DNA, USA) preserved unless entire string is all-caps. Nocase-aware: checks only unprotected segments for all-caps detection.
+- **Locale date format compatibility**: Parser locale overrides produce `dateParts`, locale XML files produce `parts` — codegen checks both with `localeFormat.parts || localeFormat.dateParts`.
+
+**Design discoveries:**
+
+10. **Per-cite disambiguation context.** Disambiguation state must flow per-cite, not per-item, because the same item could appear in different citation contexts. The `_disambig` object contains `expandAll`, `expandIndices`, `withInitials`, `etAlMin`, `etAlUseFirst`. It flows: `disambigState` → cite object → compiled citation function → `_nameConfig` → `formatNames`. Crucially, the compiled code must not bake in name config at compile time — the `_nameConfig(ctx, elementOpts)` runtime merging pattern (established in v0.2) naturally supports this.
+
+11. **Author-date collapsing operates on rendered output.** Rather than modifying the citation function's logic, the registry renders each cite individually, strips layout prefix/suffix using meta values, groups consecutive cites by `authorOnlyKey`, then reconstructs the collapsed string. This keeps the compiled style simple and the collapsing logic centralized in the registry.
+
+12. **Sentence-case must preserve acronyms context-sensitively.** Blindly lowercasing destroys "DNA" → "dna". But preserving all-caps words when the entire string is already all-caps (like "THE IMPACT OF DNA") would leave everything uppercase. The fix: check if the overall string is all-caps (then no words are special acronyms). For nocase-aware sentence case, only unprotected segments should be checked for all-caps detection — nocase content might have mixed case that makes the string appear mixed when it's actually all-caps in the unprotected parts.
+
+### v0.7 — ibid/subsequent + more styles (next)
 
 **Goals:**
-- Full name disambiguation (add-names, add-givenname)
-- Author-date cite collapsing (collapse="year", collapse="year-suffix")
 - ibid/subsequent position for note styles
-- 5 more styles
+- 5 more styles (toward 25 total)
+- Scholar integration planning
 
 ## Implementation Plan
 
@@ -864,6 +886,17 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 
 - **59 CSL fixtures:** all v0.4 fixtures plus nocase (title, sentence, uppercase, lowercase, multiple spans, no-transform), conditions (multi-type), dates (localized text, numeric form), labels (contextual plural), text-case (capitalize-all), sort (descending), groups (nested delimiter), names (sort-order-all).
 - **15 styles:** APA, MLA, Chicago Author-Date, Chicago Notes-Bib, IEEE, Vancouver, Harvard, AMA, Nature, Science, ACS, Springer Basic, Elsevier Harvard, ABNT, Cell.
+
+### Phase 4.6: Name Disambiguation + Author-Date Collapsing + 20 Styles ✅
+
+**Completed.** 20 styles compile. Full name disambiguation and author-date cite collapsing. 320 tests total.
+
+- **Name disambiguation** in registry: `disambiguate-add-givenname` (5 rules), `disambiguate-add-names`. Per-cite `_disambig` context flows through compiled code.
+- **Author-date collapsing**: `collapse="year"` and `collapse="year-suffix"` with `cite-group-delimiter`.
+- **Sentence-case acronym preservation**: Preserves all-uppercase words. Nocase-aware.
+- **5 new styles:** APSA, ASA, Annual Reviews, RSC, DGPs (de-DE).
+- **66 CSL fixtures:** Added date-parts restriction, delimiter-precedes-et-al, sentence-case preserve uppercase, all-macros-empty group, locator runtime label, disambiguate condition.
+- **20 styles:** APA, MLA, Chicago Author-Date, Chicago Notes-Bib, IEEE, Vancouver, Harvard, AMA, Nature, Science, ACS, Springer Basic, Elsevier Harvard, ABNT, Cell, APSA, ASA, Annual Reviews, RSC, DGPs.
 
 ### Phase 5: Scholar Integration + CLI
 
@@ -949,11 +982,11 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 ### v1.0 release
 
 - [x] 5 popular styles compile correctly (APA, MLA, Chicago, IEEE, Vancouver)
-- [ ] 10+ popular styles compile correctly (+ Harvard, AMA, Turabian, Nature, Science)
+- [x] 20 popular styles compile correctly (APA, MLA, Chicago x2, IEEE, Vancouver, Harvard, AMA, Nature, Science, ACS, Springer, Elsevier, ABNT, Cell, APSA, ASA, Annual Reviews, RSC, DGPs)
 - [x] HTML + text structured output for all compiled styles
 - [ ] Full structured output (HTML + parts + links + text) for all compiled styles
 - [x] CSL test suite runner with 16 passing fixtures
-- [ ] CSL test suite: 80%+ pass rate on supported-feature tests (target: 50+ fixtures)
+- [x] CSL test suite: 66 fixtures passing (covering all supported features)
 - [ ] Bundle size: <8KB `@citestyle/core`, <5KB per compiled style, <8KB registry (~20KB total for one style)
 - [ ] Scholar integration working (backward-compatible API)
 - [x] CLI: `csl compile <file>` (basic)
@@ -966,11 +999,12 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 
 ### Post-v1
 
-- [ ] 20+ compiled styles in `@citestyle/styles`
+- [x] 20+ compiled styles in `@citestyle/styles`
 - [ ] Web display styles: `minimal` and `rich` rendering modes
 - [ ] Extended metadata support (code_url, data_url, slides_url, etc.)
 - [ ] Vite plugin for `.csl` imports
-- [ ] Registry plugins: ibid, full disambiguation, cite collapsing
+- [x] Registry: full name disambiguation, cite collapsing (numeric + author-date)
+- [ ] Registry plugins: ibid/subsequent position
 - [ ] RIS and DOI parsers in `@citestyle/ris`, `@citestyle/doi`
 - [ ] CrossRef/OpenAlex metadata fetching (auto-populate extended metadata)
 - [ ] Search/filter utilities — fuzzy search over bibliography items by author, title, year, keywords (likely a registry extension or standalone utility)

@@ -48,6 +48,7 @@ export function generate(ast, locale, options = {}) {
   if (c.and === 'text') c.andTerm = T['and'] || 'and'
   else if (c.and === 'symbol') c.andTerm = '&'
   if (!c.etAlTerm) c.etAlTerm = T[el._etAlTerm || 'et-al'] || 'et al.'
+  if (ctx._disambig) c._disambig = ctx._disambig
   return c
 }`)
   lines.push('')
@@ -117,6 +118,13 @@ function buildMeta(ast) {
   if (ast.citation?.disambiguateAddYearSuffix) {
     meta.disambiguateAddYearSuffix = true
   }
+  if (ast.citation?.disambiguateAddNames) {
+    meta.disambiguateAddNames = true
+  }
+  if (ast.citation?.disambiguateAddGivenname) {
+    meta.disambiguateAddGivenname = true
+    meta.givennameDisambiguationRule = ast.citation.givennameDisambiguationRule || 'by-cite'
+  }
 
   // Expose collapse mode for cite collapsing in registry
   if (ast.citation?.collapseAttr) {
@@ -126,6 +134,25 @@ function buildMeta(ast) {
   // Expose citation layout delimiter for collapsed output
   if (ast.citation?.layout?.delimiter) {
     meta.citationLayoutDelimiter = ast.citation.layout.delimiter
+  }
+
+  // Expose collapsing delimiters for author-date collapsing
+  if (ast.citation?.citeGroupDelimiter != null) {
+    meta.citeGroupDelimiter = ast.citation.citeGroupDelimiter
+  }
+  if (ast.citation?.yearSuffixDelimiter != null) {
+    meta.yearSuffixDelimiter = ast.citation.yearSuffixDelimiter
+  }
+  if (ast.citation?.afterCollapseDelimiter != null) {
+    meta.afterCollapseDelimiter = ast.citation.afterCollapseDelimiter
+  }
+
+  // Expose citation layout prefix/suffix for collapsing reconstruction
+  if (ast.citation?.layout?.prefix != null) {
+    meta.citationLayoutPrefix = ast.citation.layout.prefix
+  }
+  if (ast.citation?.layout?.suffix != null) {
+    meta.citationLayoutSuffix = ast.citation.layout.suffix
   }
 
   return meta
@@ -249,8 +276,9 @@ function generateCitation(citNode, ctx) {
   const isSuperscript = layout.verticalAlign === 'sup'
 
   return `export function citation(cites, ctx = {}) {
-  ctx = { ...ctx, _secOpts: CIT_NAME_OPTS }
+  const _outerCtx = { ...ctx, _secOpts: CIT_NAME_OPTS }
   const rendered = cites.map(cite => {
+    let ctx = cite._disambig ? { ..._outerCtx, _disambig: cite._disambig } : _outerCtx
     let item = cite.item || cite
     if (cite.locator != null) { item = { ...item, locator: cite.locator, _locatorLabel: cite.label || 'page' } }
 ${body.code}
@@ -765,7 +793,9 @@ function generateDateElement(node, ctx, indent) {
   if (node.form && (!dateParts || dateParts.length === 0)) {
     const localeFormat = ctx.locale.dateFormats[node.form]
     if (localeFormat) {
-      dateParts = localeFormat.parts.map(p => ({
+      // Locale file uses 'parts', parser locale overrides use 'dateParts'
+      const formatParts = localeFormat.parts || localeFormat.dateParts || []
+      dateParts = formatParts.map(p => ({
         ...p,
         // Merge any date-part overrides from the style
         ...(node.dateParts?.find(dp => dp.name === p.name) || {}),

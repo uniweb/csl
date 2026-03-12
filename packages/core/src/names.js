@@ -45,28 +45,53 @@ export function formatNames(names, config = {}) {
   } = config
 
   // Determine if et-al truncation applies
+  // Disambiguation override: registry may increase etAlUseFirst to show more names
+  const effectiveEtAlMin = config._disambig?.etAlMin ?? etAlMin
+  const effectiveEtAlUseFirst = config._disambig?.etAlUseFirst ?? etAlUseFirst
   let truncated = false
   let displayNames = names
-  if (etAlMin && etAlUseFirst && names.length >= etAlMin) {
+  if (effectiveEtAlMin && effectiveEtAlUseFirst && names.length >= effectiveEtAlMin) {
     truncated = true
-    if (etAlUseLast && names.length > etAlUseFirst + 1) {
+    if (etAlUseLast && names.length > effectiveEtAlUseFirst + 1) {
       // Show first N, then last (ellipsis added during join)
       displayNames = [
-        ...names.slice(0, etAlUseFirst),
+        ...names.slice(0, effectiveEtAlUseFirst),
         names[names.length - 1],
       ]
     } else {
-      displayNames = names.slice(0, etAlUseFirst)
+      displayNames = names.slice(0, effectiveEtAlUseFirst)
     }
   }
 
   // Handle form="count" — return number of names
   if (form === 'count') return String(displayNames.length)
 
+  // Disambiguation config (set by registry for name disambiguation)
+  const disambig = config._disambig
+
   // Format individual names
   const formatted = displayNames.map((name, i) => {
+    // Determine effective form/initialize for this name position
+    let nameForm = form
+    let nameInit = initialize
+    let nameInitWith = initializeWith
+
+    if (disambig && nameForm === 'short') {
+      // Check if this name index should be expanded
+      const expand = disambig.expandAll || (disambig.expandIndices && disambig.expandIndices.includes(i))
+      if (expand) {
+        nameForm = 'long'
+        if (disambig.withInitials) {
+          nameInit = true
+          nameInitWith = disambig.initializeWith ?? initializeWith ?? '. '
+        } else {
+          nameInit = false // show full given names
+        }
+      }
+    }
+
     // form="short" — family name only
-    if (form === 'short') {
+    if (nameForm === 'short') {
       if (name.literal) return name.literal
       let family = buildFamilyWithParticles(name)
       family = applyNamePartFormatting(family, 'family', nameParts)
@@ -74,8 +99,8 @@ export function formatNames(names, config = {}) {
     }
 
     return formatSingleName(name, {
-      initialize,
-      initializeWith,
+      initialize: nameInit,
+      initializeWith: nameInitWith,
       nameAsSortOrder,
       sortSeparator,
       index: i,

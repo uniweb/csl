@@ -110,11 +110,18 @@ Parser → codegen → compiled APA output. Core helpers for names, dates, text-
 - **Note style support**: Chicago Notes-Bibliography compiles and produces full-reference footnote citations (class="note").
 - **269 tests total** across 11 test files (80 core, 108 compiler, 22 registry, 59 CSL fixtures)
 
-### Next: v0.6 — Full name disambiguation + more styles
-- Full name disambiguation (add-names, add-givenname)
-- Author-date cite collapsing (collapse="year", collapse="year-suffix")
-- 5 more styles
-- ibid/subsequent position (footnote-centric)
+### v0.6 — Name disambiguation + author-date collapsing + 5 more styles (complete)
+- **Full name disambiguation**: `disambiguate-add-givenname` with 5 rules (`by-cite`, `all-names`, `all-names-with-initials`, `primary-name`, `primary-name-with-initials`) and `disambiguate-add-names` (et-al expansion). Per-cite `_disambig` context flows through compiled code to `formatNames`. Registry detects collisions and progressively expands names.
+- **Author-date cite collapsing**: `collapse="year"` and `collapse="year-suffix"` group consecutive same-author cites. `cite-group-delimiter` support. Registry renders each cite individually, strips layout prefix/suffix, groups by `authorOnlyKey`, reconstructs collapsed output.
+- **20 styles compile correctly**: Added APSA, ASA, Annual Reviews, RSC, DGPs (German locale) to existing 15
+- **Sentence case preserves acronyms**: All-uppercase words (DNA, USA) preserved in sentence-case transform unless entire string is all-caps. Nocase-aware sentence case checks only unprotected segments for all-caps detection.
+- **Locale date format compatibility**: Parser locale overrides produce `dateParts`, locale XML files produce `parts` — codegen checks both.
+- **320 tests total** across 11 test files (80 core, 114 compiler, 38 registry, 66 CSL fixtures + 22 name disambiguation/collapsing)
+
+### Next: v0.7 — ibid/subsequent + more styles + Scholar integration
+- ibid/subsequent position for note styles
+- 5 more styles (toward 25 total)
+- Scholar integration planning
 
 ## Technical Decisions
 
@@ -147,11 +154,14 @@ XML attributes with value `""` (like `initialize-with=""` in Vancouver) must be 
 ### What the compiler does NOT handle (deferred)
 
 - ibid / subsequent position / near-note (footnote-centric)
-- Full name disambiguation (add-names, add-givenname — complex, low value for web)
-- Author-date cite collapsing (year, year-suffix — numeric collapsing IS supported)
 - CSL-M extensions (legal/multilingual — different spec)
 
 These are architecturally possible as registry plugins but not needed for web rendering.
+
+### Previously deferred, now implemented
+
+- **Full name disambiguation** (v0.6) — `disambiguate-add-givenname` (5 rules) + `disambiguate-add-names` in registry
+- **Cite collapsing** (v0.5 + v0.6) — Numeric range compression + author-date grouping (`collapse="year"/"year-suffix"`) in registry
 
 ## Web Display Styles
 
@@ -202,15 +212,15 @@ Four test layers:
 
 1. **Unit tests** (`packages/core/test/`) — Core helpers (names 22, dates 8, text-case+nocase 21, numbers 6, pages 6, HTML 17). 80 tests.
 
-2. **Compiler tests** (`packages/compiler/test/`) — Parser (11), compilation (11), style integration for 15 real styles (86). 108 tests.
+2. **Compiler tests** (`packages/compiler/test/`) — Parser (11), compilation (11), style integration for 20 real styles (114). 136 tests.
 
-3. **CSL test suite fixtures** (`test/csl-suite.test.js`, `test/csl-fixtures/`) — Adapted from `github.com/citation-style-language/test-suite`. Each fixture has MODE, CSL, INPUT, RESULT sections; some also have CITATION-ITEMS (per-cite locator data). The runner compiles the embedded CSL, feeds INPUT, applies bibliography sorting, compares `.text` output against RESULT. 59 fixtures covering: names (particles, initials, hyphenated, form, et-al, substitute, literal, 3-author, sort-order-all), groups (suppression, delimiter, nesting), conditions (type, variable, is-numeric, match all/any/none, multi-type), dates (month, accessed, range, season, short form, localized text, numeric form), numbers (ordinal, roman), labels (short, empty, plural, contextual), affixes, decorations (italic, bold, quotes), nocase spans (title, sentence, uppercase, lowercase, multiple spans, no-transform), text-case (title, capitalize-all), sort (descending), macros, strip-periods, static text values. Auto-skips deferred features.
+3. **CSL test suite fixtures** (`test/csl-suite.test.js`, `test/csl-fixtures/`) — Adapted from `github.com/citation-style-language/test-suite`. Each fixture has MODE, CSL, INPUT, RESULT sections; some also have CITATION-ITEMS (per-cite locator data). The runner compiles the embedded CSL, feeds INPUT, applies bibliography sorting, compares `.text` output against RESULT. 66 fixtures covering: names (particles, initials, hyphenated, form, et-al, substitute, literal, 3-author, sort-order-all, delimiter-precedes-et-al), groups (suppression, delimiter, nesting, all-macros-empty), conditions (type, variable, is-numeric, match all/any/none, multi-type, disambiguate), dates (month, accessed, range, season, short form, localized text, numeric form, date-parts restriction), numbers (ordinal, roman), labels (short, empty, plural, contextual, locator runtime), affixes, decorations (italic, bold, quotes), nocase spans (title, sentence, uppercase, lowercase, multiple spans, no-transform), text-case (title, capitalize-all, sentence preserve uppercase), sort (descending), macros, strip-periods, static text values. Auto-skips deferred features.
 
-4. **Registry integration tests** (`packages/registry/test/registry.test.js`) — Registry API with compiled styles (APA, Vancouver, MLA), citation numbering, bibliography sorting, subsequent-author-substitute, year-suffix disambiguation, cite collapsing. 22 tests.
+4. **Registry integration tests** (`packages/registry/test/registry.test.js`) — Registry API with compiled styles (APA, Vancouver, MLA), citation numbering, bibliography sorting, subsequent-author-substitute, year-suffix disambiguation, cite collapsing (numeric + year + year-suffix), name disambiguation (add-givenname, add-names, by-cite). 38 tests.
 
-Run all tests: `npx vitest run` (269 tests, ~900ms).
+Run all tests: `npx vitest run` (320 tests, ~1.2s).
 
 ### Known limitations (skip markers in test runner)
 - `position=`, `ibid` — footnote-centric features
-- `disambiguate-add-names`, `disambiguate-add-givenname` — name disambiguation (year-suffix IS supported)
-- `collapse=` — cite collapsing in CSL fixture runner (collapse IS supported via registry)
+- `disambiguate-` — name/cite disambiguation in CSL fixture runner (disambiguation IS supported via registry)
+- `collapse=` — cite collapsing in CSL fixture runner (collapsing IS supported via registry)

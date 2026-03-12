@@ -158,6 +158,7 @@ function parseCitationOrBibliography(el, type) {
     disambiguateAddGivenname: attr(el, 'disambiguate-add-givenname') === 'true',
     givennameDisambiguationRule: attr(el, 'givenname-disambiguation-rule'),
     collapseAttr: attr(el, 'collapse'),
+    citeGroupDelimiter: attr(el, 'cite-group-delimiter'),
     yearSuffixDelimiter: attr(el, 'year-suffix-delimiter'),
     afterCollapseDelimiter: attr(el, 'after-collapse-delimiter'),
     nearNoteDistance: attr(el, 'near-note-distance'),

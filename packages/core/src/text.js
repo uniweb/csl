@@ -180,17 +180,83 @@ function parseNocaseSegments(str) {
  * @returns {string}
  */
 export function sentenceCase(str) {
-  return withNocaseProtection(str, _sentenceCaseInner)
+  if (!str) return ''
+  if (!str.includes('<span class="nocase">')) return _sentenceCaseInner(str)
+
+  // Nocase-aware: parse into segments, process as single sequence
+  const segments = parseNocaseSegments(str)
+  // Detect all-caps from unprotected segments only (nocase content shouldn't affect detection)
+  const unprotectedText = segments.filter(s => !s.protect).map(s => s.text).join('')
+  const isAllCaps = unprotectedText === unprotectedText.toUpperCase() && /[a-zA-Z]/.test(unprotectedText)
+
+  let globalWordIdx = 0
+  let afterColon = false
+  return segments.map(seg => {
+    if (seg.protect) {
+      // Count words in protected segments but don't transform
+      const words = seg.text.split(/(\s+)/)
+      for (const w of words) {
+        if (w.trim()) {
+          globalWordIdx++
+          afterColon = w.endsWith(':')
+        }
+      }
+      return seg.text
+    }
+
+    const words = seg.text.split(/(\s+)/)
+    return words.map(word => {
+      if (!word.trim()) return word
+      globalWordIdx++
+
+      // First word or after colon: capitalize
+      if (globalWordIdx === 1 || afterColon) {
+        afterColon = word.endsWith(':')
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }
+
+      if (word.endsWith(':')) afterColon = true
+
+      // Preserve all-caps acronyms when string isn't entirely uppercase
+      if (/^[A-Z]{2,}$/.test(word) && !isAllCaps) return word
+      // Preserve mixed-case words
+      if (/[a-z][A-Z]|[A-Z][a-z].*[A-Z]/.test(word)) return word
+
+      return word.toLowerCase()
+    }).join('')
+  }).join('')
 }
 
 function _sentenceCaseInner(str) {
   if (!str) return ''
-  // Lowercase everything
-  let result = str.toLowerCase()
-  // Capitalize first character
-  result = result.charAt(0).toUpperCase() + result.slice(1)
-  // Capitalize after colon+space
-  result = result.replace(/: [a-z]/g, match => match.toUpperCase())
+  const isAllCaps = str === str.toUpperCase() && /[a-zA-Z]/.test(str)
+  const words = str.split(/(\s+)/)
+  let wordIndex = 0
+  let afterColon = false
+
+  const result = words.map(word => {
+    if (!word.trim()) return word
+    wordIndex++
+
+    // Preserve all-caps words (acronyms) when string isn't entirely uppercase
+    if (/^[A-Z]{2,}$/.test(word) && !isAllCaps && wordIndex > 1) return word
+    // Preserve mixed-case words (e.g., "iPhone", "McDonald")
+    if (/[a-z][A-Z]|[A-Z][a-z].*[A-Z]/.test(word) && wordIndex > 1) return word
+
+    // First word or after colon: capitalize
+    if (wordIndex === 1 || afterColon) {
+      afterColon = false
+      // First word all-caps in non-all-caps string: capitalize normally
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    }
+
+    if (word.endsWith(':')) {
+      afterColon = true
+    }
+
+    return word.toLowerCase()
+  }).join('')
+
   return result
 }
 

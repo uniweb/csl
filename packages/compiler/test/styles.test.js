@@ -812,3 +812,230 @@ describe('Cell', () => {
     expect(bib.html).toContain('Nature Neuroscience')
   })
 })
+
+// ── APSA (American Political Science Association) ────────────────────────────
+
+describe('APSA', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'american-political-science-association.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles APSA', () => {
+    expect(style.meta.title).toContain('APSA')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('exposes disambiguation settings in meta', () => {
+    expect(style.meta.disambiguateAddGivenname).toBe(true)
+    expect(style.meta.disambiguateAddNames).toBe(true)
+    expect(style.meta.givennameDisambiguationRule).toBe('primary-name')
+    expect(style.meta.collapse).toBe('year')
+  })
+
+  it('formats article bibliography with full names', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toContain('Smith, John Andrew')
+    expect(bib.text).toContain('Barbara Carol Jones')
+    expect(bib.text).toContain('2024')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats book with edition', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman, Donald Arthur')
+    expect(bib.text).toContain('2013')
+    expect(bib.text).toContain('2nd ed')
+  })
+
+  it('generates author-date citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('(Smith and Jones 2024)')
+  })
+
+  it('renders semantic HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('class="csl-entry"')
+    expect(bib.html).toContain('class="csl-author"')
+  })
+})
+
+// ── ASA (American Sociological Association) ──────────────────────────────────
+
+describe('ASA', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'american-sociological-association.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles ASA', () => {
+    expect(style.meta.title).toContain('ASA')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('exposes by-cite disambiguation', () => {
+    expect(style.meta.disambiguateAddGivenname).toBe(true)
+    expect(style.meta.givennameDisambiguationRule).toBe('by-cite')
+    expect(style.meta.collapse).toBe('year')
+  })
+
+  it('formats article bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toContain('Smith, John Andrew')
+    expect(bib.text).toContain('Barbara Carol Jones')
+    expect(bib.text).toContain('2024')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('generates author-date citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('(Smith and Jones 2024)')
+  })
+
+  it('renders DOI link', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('csl-doi')
+  })
+})
+
+// ── Annual Reviews (author-date) ────────────────────────────────────────────
+
+describe('Annual Reviews', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'annual-reviews-author-date.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles Annual Reviews', () => {
+    expect(style.meta.title).toContain('Annual Review')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('exposes year-suffix-ranged collapse', () => {
+    expect(style.meta.collapse).toBe('year-suffix-ranged')
+    expect(style.meta.disambiguateAddYearSuffix).toBe(true)
+  })
+
+  it('formats article with compact initials', () => {
+    const bib = style.bibliography(article)
+    // Annual Reviews uses "Smith JA" style initials
+    expect(bib.text).toContain('Smith JA')
+    expect(bib.text).toContain('Jones BC')
+    expect(bib.text).toContain('2024')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman DA')
+    expect(bib.text).toContain('2013')
+  })
+
+  it('generates author-date citations with ampersand', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('(Smith & Jones 2024)')
+  })
+})
+
+// ── RSC (Royal Society of Chemistry) ────────────────────────────────────────
+
+describe('RSC', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'royal-society-of-chemistry.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles RSC', () => {
+    expect(style.meta.title).toContain('Royal Society of Chemistry')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('exposes numeric collapse', () => {
+    expect(style.meta.collapse).toBe('citation-number')
+  })
+
+  it('formats article with spaced initials', () => {
+    const bib = style.bibliography(article)
+    // RSC: "J. A. Smith and B. C. Jones"
+    expect(bib.text).toContain('J. A. Smith')
+    expect(bib.text).toContain('B. C. Jones')
+    expect(bib.text).toContain('2024')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('D. A. Norman')
+    expect(bib.text).toContain('2013')
+    expect(bib.text).toContain('design of everyday things')
+  })
+
+  it('generates bare numeric citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('1')
+  })
+
+  it('renders semantic HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('class="csl-entry"')
+  })
+})
+
+// ── DGPs (Deutsche Gesellschaft für Psychologie) ────────────────────────────
+
+describe('DGPs (German psychology)', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'deutsche-gesellschaft-fur-psychologie.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles DGPs', () => {
+    expect(style.meta.title).toContain('Deutsche Gesellschaft')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('exposes German locale and disambiguation', () => {
+    expect(style.meta.disambiguateAddGivenname).toBe(true)
+    expect(style.meta.disambiguateAddNames).toBe(true)
+    expect(style.meta.collapse).toBe('year')
+  })
+
+  it('formats article with German locale', () => {
+    const bib = style.bibliography(article)
+    // DGPs uses initials: "Smith, J. A."
+    expect(bib.text).toContain('Smith, J. A.')
+    expect(bib.text).toContain('Jones, B. C.')
+    expect(bib.text).toContain('(2024)')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats book with German terms', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman, D. A.')
+    expect(bib.text).toContain('(2013)')
+    // German "Auflage" for edition
+    expect(bib.text).toContain('Auflage')
+  })
+
+  it('generates author-date citations with ampersand', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('(Smith & Jones, 2024)')
+  })
+
+  it('renders semantic CSS and proper HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('class="csl-entry"')
+    expect(bib.html).toContain('class="csl-author"')
+    expect(bib.html).toContain('class="csl-title"')
+  })
+})

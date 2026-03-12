@@ -1,0 +1,39 @@
+>>===== MODE =====>>
+bibliography
+<<===== MODE =====<<
+
+>>===== RESULT =====>>
+Smith, 2024.
+<<===== RESULT =====<<
+
+>>===== CSL =====>>
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0">
+  <info><id /><title /><updated>2009-08-10T04:49:00+09:00</updated></info>
+  <bibliography>
+    <layout suffix=".">
+      <group delimiter=", ">
+        <names variable="author">
+          <name form="short"/>
+        </names>
+        <date variable="issued" date-parts="year">
+          <date-part name="year"/>
+          <date-part name="month"/>
+        </date>
+      </group>
+    </layout>
+  </bibliography>
+</style>
+<<===== CSL =====<<
+
+>>===== INPUT =====>>
+[
+    {
+        "id": "ITEM-1",
+        "type": "article-journal",
+        "author": [
+            {"family": "Smith", "given": "John"}
+        ],
+        "issued": {"date-parts": [[2024, 3, 15]]}
+    }
+]
+<<===== INPUT =====<<

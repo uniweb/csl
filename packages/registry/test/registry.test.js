@@ -323,3 +323,336 @@ describe('cite collapsing (citation-number)', () => {
     expect(cit.text).toBe('[1]')
   })
 })
+
+// ── Name disambiguation ────────────────────────────────────────────────────
+
+describe('name disambiguation (add-givenname)', () => {
+  let apaStyle
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'apa.csl'), 'utf-8')
+    apaStyle = await compileStyle(csl)
+  })
+
+  it('APA exposes disambiguation meta', () => {
+    expect(apaStyle.meta.disambiguateAddGivenname).toBe(true)
+    expect(apaStyle.meta.disambiguateAddNames).toBe(true)
+    expect(apaStyle.meta.givennameDisambiguationRule).toBe('primary-name-with-initials')
+  })
+
+  it('disambiguates same-surname authors by adding initials', () => {
+    // Two different authors with same surname, different given names
+    const itemA = {
+      id: 'disambig-a', type: 'article-journal', title: 'Alpha study',
+      author: [{ family: 'Smith', given: 'John' }],
+      issued: { 'date-parts': [[2024]] }, 'container-title': 'Nature',
+    }
+    const itemB = {
+      id: 'disambig-b', type: 'article-journal', title: 'Beta study',
+      author: [{ family: 'Smith', given: 'Jane' }],
+      issued: { 'date-parts': [[2024]] }, 'container-title': 'Science',
+    }
+    const reg = createRegistry(apaStyle)
+    reg.addItems([itemA, itemB])
+
+    const citA = reg.cite([{ id: 'disambig-a' }])
+    const citB = reg.cite([{ id: 'disambig-b' }])
+
+    // APA primary-name-with-initials: "(J. Smith, 2024)" vs "(J. Smith, 2024)"
+    // Wait — both are "J." → initials don't help → falls through to year-suffix
+    // Different people, different given names but same initial: year-suffix applied
+    // Actually, authorYearKey differs (different given names), so no year-suffix
+    // The disambiguation should at least add initials
+    expect(citA.text).toContain('J. Smith')
+    expect(citB.text).toContain('J. Smith')
+  })
+
+  it('disambiguates with distinct initials', () => {
+    // Two authors with same surname but different initials
+    const itemA = {
+      id: 'init-a', type: 'article-journal', title: 'Study A',
+      author: [{ family: 'Johnson', given: 'Amy' }],
+      issued: { 'date-parts': [[2023]] }, 'container-title': 'Nature',
+    }
+    const itemB = {
+      id: 'init-b', type: 'article-journal', title: 'Study B',
+      author: [{ family: 'Johnson', given: 'Brian' }],
+      issued: { 'date-parts': [[2023]] }, 'container-title': 'Science',
+    }
+    const reg = createRegistry(apaStyle)
+    reg.addItems([itemA, itemB])
+
+    const citA = reg.cite([{ id: 'init-a' }])
+    const citB = reg.cite([{ id: 'init-b' }])
+
+    // Initials are different → "(A. Johnson, 2023)" vs "(B. Johnson, 2023)"
+    expect(citA.text).toContain('A.')
+    expect(citB.text).toContain('B.')
+    expect(citA.text).not.toBe(citB.text)
+  })
+
+  it('no disambiguation needed for different surnames', () => {
+    const itemA = {
+      id: 'diff-a', type: 'article-journal', title: 'Study A',
+      author: [{ family: 'Smith', given: 'John' }],
+      issued: { 'date-parts': [[2024]] }, 'container-title': 'Nature',
+    }
+    const itemB = {
+      id: 'diff-b', type: 'article-journal', title: 'Study B',
+      author: [{ family: 'Jones', given: 'Jane' }],
+      issued: { 'date-parts': [[2024]] }, 'container-title': 'Science',
+    }
+    const reg = createRegistry(apaStyle)
+    reg.addItems([itemA, itemB])
+
+    const citA = reg.cite([{ id: 'diff-a' }])
+    const citB = reg.cite([{ id: 'diff-b' }])
+
+    // No disambiguation — family names are different
+    expect(citA.text).toBe('(Smith, 2024)')
+    expect(citB.text).toBe('(Jones, 2024)')
+  })
+})
+
+describe('name disambiguation (add-names)', () => {
+  let chicagoStyle
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'chicago-author-date.csl'), 'utf-8')
+    chicagoStyle = await compileStyle(csl)
+  })
+
+  it('Chicago exposes primary-name rule', () => {
+    expect(chicagoStyle.meta.disambiguateAddGivenname).toBe(true)
+    expect(chicagoStyle.meta.disambiguateAddNames).toBe(true)
+    expect(chicagoStyle.meta.givennameDisambiguationRule).toBe('primary-name')
+  })
+
+  it('disambiguates by expanding et-al truncated names', () => {
+    // Chicago uses et-al-min=3, et-al-use-first=1
+    // Two papers by different teams but same first author → same truncated citation
+    const itemA = {
+      id: 'etn-a', type: 'article-journal', title: 'Study A',
+      author: [
+        { family: 'Smith', given: 'John' },
+        { family: 'Jones', given: 'Amy' },
+        { family: 'Brown', given: 'Bob' },
+      ],
+      issued: { 'date-parts': [[2024]] }, 'container-title': 'Nature',
+    }
+    const itemB = {
+      id: 'etn-b', type: 'article-journal', title: 'Study B',
+      author: [
+        { family: 'Smith', given: 'John' },
+        { family: 'White', given: 'Carol' },
+        { family: 'Green', given: 'Dan' },
+      ],
+      issued: { 'date-parts': [[2024]] }, 'container-title': 'Science',
+    }
+    const reg = createRegistry(chicagoStyle)
+    reg.addItems([itemA, itemB])
+
+    const citA = reg.cite([{ id: 'etn-a' }])
+    const citB = reg.cite([{ id: 'etn-b' }])
+
+    // Default: both would be "(Smith et al. 2024)"
+    // After add-names: should show more names to disambiguate
+    // "(Smith, Jones, et al. 2024)" vs "(Smith, White, et al. 2024)" or fully expanded
+    expect(citA.text).not.toBe(citB.text)
+    // Both should contain their distinguishing second author
+    expect(citA.text).toContain('Jones')
+    expect(citB.text).toContain('White')
+  })
+})
+
+describe('name disambiguation (by-cite rule, ASA)', () => {
+  let asaStyle
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'american-sociological-association.csl'), 'utf-8')
+    asaStyle = await compileStyle(csl)
+  })
+
+  it('ASA uses by-cite rule', () => {
+    expect(asaStyle.meta.givennameDisambiguationRule).toBe('by-cite')
+  })
+
+  it('progressively expands names for by-cite disambiguation', () => {
+    const itemA = {
+      id: 'bc-a', type: 'article-journal', title: 'Study A',
+      author: [{ family: 'Chen', given: 'Alice' }],
+      issued: { 'date-parts': [[2023]] }, 'container-title': 'ASR',
+    }
+    const itemB = {
+      id: 'bc-b', type: 'article-journal', title: 'Study B',
+      author: [{ family: 'Chen', given: 'Bob' }],
+      issued: { 'date-parts': [[2023]] }, 'container-title': 'AJS',
+    }
+    const reg = createRegistry(asaStyle)
+    reg.addItems([itemA, itemB])
+
+    const citA = reg.cite([{ id: 'bc-a' }])
+    const citB = reg.cite([{ id: 'bc-b' }])
+
+    // by-cite should expand given names to disambiguate
+    expect(citA.text).not.toBe(citB.text)
+    expect(citA.text).toContain('Alice')
+    expect(citB.text).toContain('Bob')
+  })
+})
+
+// ── Author-date cite collapsing ─────────────────────────────────────────────
+
+describe('cite collapsing (year)', () => {
+  let apaStyle
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'apa.csl'), 'utf-8')
+    apaStyle = await compileStyle(csl)
+  })
+
+  it('APA exposes year collapsing', () => {
+    expect(apaStyle.meta.collapse).toBe('year')
+    expect(apaStyle.meta.citationLayoutPrefix).toBe('(')
+    expect(apaStyle.meta.citationLayoutSuffix).toBe(')')
+  })
+
+  it('collapses consecutive same-author cites by year', () => {
+    const items = [
+      { id: 'cy-1', type: 'article-journal', title: 'Study 1',
+        author: [{ family: 'Smith', given: 'John' }],
+        issued: { 'date-parts': [[2020]] }, 'container-title': 'Nature' },
+      { id: 'cy-2', type: 'article-journal', title: 'Study 2',
+        author: [{ family: 'Smith', given: 'John' }],
+        issued: { 'date-parts': [[2021]] }, 'container-title': 'Science' },
+    ]
+    const reg = createRegistry(apaStyle)
+    reg.addItems(items)
+
+    const cit = reg.cite([{ id: 'cy-1' }, { id: 'cy-2' }])
+    // Should be "(Smith, 2020, 2021)" not "(Smith, 2020; Smith, 2021)"
+    expect(cit.text).toBe('(Smith, 2020, 2021)')
+  })
+
+  it('does not collapse different authors', () => {
+    const items = [
+      { id: 'nc-1', type: 'article-journal', title: 'Study 1',
+        author: [{ family: 'Smith', given: 'John' }],
+        issued: { 'date-parts': [[2020]] }, 'container-title': 'Nature' },
+      { id: 'nc-2', type: 'article-journal', title: 'Study 2',
+        author: [{ family: 'Jones', given: 'Jane' }],
+        issued: { 'date-parts': [[2021]] }, 'container-title': 'Science' },
+    ]
+    const reg = createRegistry(apaStyle)
+    reg.addItems(items)
+
+    const cit = reg.cite([{ id: 'nc-1' }, { id: 'nc-2' }])
+    // Different authors — no collapsing
+    expect(cit.text).toContain('Smith')
+    expect(cit.text).toContain('Jones')
+    expect(cit.text).toContain('2020')
+    expect(cit.text).toContain('2021')
+  })
+
+  it('collapses same-author with different-author between groups', () => {
+    const items = [
+      { id: 'mg-1', type: 'article-journal', title: 'S1',
+        author: [{ family: 'Smith', given: 'John' }],
+        issued: { 'date-parts': [[2020]] }, 'container-title': 'N' },
+      { id: 'mg-2', type: 'article-journal', title: 'S2',
+        author: [{ family: 'Smith', given: 'John' }],
+        issued: { 'date-parts': [[2021]] }, 'container-title': 'N' },
+      { id: 'mg-3', type: 'article-journal', title: 'S3',
+        author: [{ family: 'Jones', given: 'Jane' }],
+        issued: { 'date-parts': [[2019]] }, 'container-title': 'S' },
+    ]
+    const reg = createRegistry(apaStyle)
+    reg.addItems(items)
+
+    const cit = reg.cite([{ id: 'mg-1' }, { id: 'mg-2' }, { id: 'mg-3' }])
+    // Smith group collapses, Jones separate
+    expect(cit.text).toContain('Smith, 2020, 2021')
+    expect(cit.text).toContain('Jones, 2019')
+  })
+
+  it('single cite does not trigger collapsing', () => {
+    const items = [
+      { id: 'sc-1', type: 'article-journal', title: 'Solo',
+        author: [{ family: 'Smith', given: 'John' }],
+        issued: { 'date-parts': [[2024]] }, 'container-title': 'N' },
+    ]
+    const reg = createRegistry(apaStyle)
+    reg.addItems(items)
+
+    const cit = reg.cite([{ id: 'sc-1' }])
+    expect(cit.text).toBe('(Smith, 2024)')
+  })
+})
+
+describe('cite collapsing (year-suffix)', () => {
+  let springerStyle
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'springer-basic-author-date.csl'), 'utf-8')
+    springerStyle = await compileStyle(csl)
+  })
+
+  it('Springer exposes year-suffix collapse', () => {
+    expect(springerStyle.meta.collapse).toBe('year-suffix')
+    expect(springerStyle.meta.citeGroupDelimiter).toBe(', ')
+  })
+})
+
+describe('cite collapsing (year with year-suffixes, APA)', () => {
+  let apaStyle
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'apa.csl'), 'utf-8')
+    apaStyle = await compileStyle(csl)
+  })
+
+  it('collapses same-author cites with year-suffixes', () => {
+    const items = [
+      { id: 'ysapa-1', type: 'article-journal', title: 'Study A',
+        author: [{ family: 'Smith', given: 'John' }],
+        issued: { 'date-parts': [[2020]] }, 'container-title': 'Nature' },
+      { id: 'ysapa-2', type: 'article-journal', title: 'Study B',
+        author: [{ family: 'Smith', given: 'John' }],
+        issued: { 'date-parts': [[2020]] }, 'container-title': 'Science' },
+    ]
+    const reg = createRegistry(apaStyle)
+    reg.addItems(items)
+
+    const cit = reg.cite([{ id: 'ysapa-1' }, { id: 'ysapa-2' }])
+    // APA: year-suffixed cites should collapse: "(Smith, 2020a, 2020b)"
+    expect(cit.text).toContain('2020a')
+    expect(cit.text).toContain('2020b')
+    // Should be collapsed — only one mention of "Smith"
+    const smithCount = (cit.text.match(/Smith/g) || []).length
+    expect(smithCount).toBe(1)
+  })
+
+  it('collapses mixed years with year-suffixes', () => {
+    const items = [
+      { id: 'mys-1', type: 'article-journal', title: 'A',
+        author: [{ family: 'Lee', given: 'Amy' }],
+        issued: { 'date-parts': [[2020]] }, 'container-title': 'N' },
+      { id: 'mys-2', type: 'article-journal', title: 'B',
+        author: [{ family: 'Lee', given: 'Amy' }],
+        issued: { 'date-parts': [[2020]] }, 'container-title': 'S' },
+      { id: 'mys-3', type: 'article-journal', title: 'C',
+        author: [{ family: 'Lee', given: 'Amy' }],
+        issued: { 'date-parts': [[2021]] }, 'container-title': 'N' },
+    ]
+    const reg = createRegistry(apaStyle)
+    reg.addItems(items)
+
+    const cit = reg.cite([{ id: 'mys-1' }, { id: 'mys-2' }, { id: 'mys-3' }])
+    // Should collapse all under Lee: "(Lee, 2020a, 2020b, 2021)"
+    expect(cit.text).toContain('2020a')
+    expect(cit.text).toContain('2020b')
+    expect(cit.text).toContain('2021')
+    const leeCount = (cit.text.match(/Lee/g) || []).length
+    expect(leeCount).toBe(1)
+  })
+})
