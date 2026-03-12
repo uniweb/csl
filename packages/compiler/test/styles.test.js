@@ -280,7 +280,10 @@ describe('HTML structured output', () => {
 
   it('applies italic formatting to container titles', () => {
     const bib = apaStyle.bibliography(article)
-    expect(bib.html).toContain('<i>Nature Neuroscience</i>')
+    // Container title gets semantic span + italic wrapping
+    expect(bib.html).toContain('<i>')
+    expect(bib.html).toContain('Nature Neuroscience')
+    expect(bib.html).toContain('csl-container-title')
   })
 
   it('strips formatting tokens from text output', () => {
@@ -315,5 +318,23 @@ describe('HTML structured output', () => {
     }
     const bib = apaStyle.bibliography(webItem)
     expect(bib.html).toContain('<a class="csl-url" href="https://example.com/page">')
+  })
+
+  it('adds semantic CSS classes for each variable', () => {
+    const bib = apaStyle.bibliography(article)
+    expect(bib.html).toContain('class="csl-author"')
+    expect(bib.html).toContain('class="csl-issued"')
+    expect(bib.html).toContain('class="csl-title"')
+    expect(bib.html).toContain('class="csl-container-title"')
+    expect(bib.html).toContain('class="csl-volume"')
+    expect(bib.html).toContain('class="csl-issue"')
+    expect(bib.html).toContain('class="csl-page"')
+    expect(bib.html).toContain('class="csl-DOI"')
+  })
+
+  it('semantic spans do not appear in text output', () => {
+    const bib = apaStyle.bibliography(article)
+    expect(bib.text).not.toMatch(/csl-/)
+    expect(bib.text).not.toMatch(/[\uE020-\uE022]/)
   })
 })

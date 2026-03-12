@@ -116,7 +116,7 @@ describe('formatNames', () => {
     })).toBe('Smith, J. A., & Jones, B. C.')
   })
 
-  it('handles et-al-use-last (ellipsis pattern)', () => {
+  it('handles et-al-use-last (ellipsis pattern without "and")', () => {
     const names = Array.from({ length: 25 }, (_, i) => ({
       family: 'Author' + (i + 1),
       given: 'A',
@@ -133,5 +133,106 @@ describe('formatNames', () => {
     expect(result).toContain('Author25')
     expect(result).toContain('Author19')
     expect(result).not.toContain('Author20')
+    // Should NOT have "and" or "&" before last name
+    expect(result).not.toContain('& A Author25')
+    expect(result).toMatch(/\u2026 A Author25$/)
+  })
+
+  // ── delimiter-precedes-et-al ────────────────────────────────────────────
+
+  it('delimiter-precedes-et-al="always" adds delimiter before et al.', () => {
+    const names = [{ family: 'Smith', given: 'J.' }]
+    const result = formatNames(names, {
+      etAlMin: 1,
+      etAlUseFirst: 1,
+      delimiterPrecedesEtAl: 'always',
+      delimiter: ', ',
+    })
+    // Single name + delimiter + et al.
+    expect(result).toBe('J. Smith, et al.')
+  })
+
+  it('delimiter-precedes-et-al="never" uses space before et al.', () => {
+    const names = [
+      { family: 'Smith', given: 'J.' },
+      { family: 'Jones', given: 'B.' },
+      { family: 'Chen', given: 'W.' },
+    ]
+    const result = formatNames(names, {
+      etAlMin: 3,
+      etAlUseFirst: 2,
+      delimiterPrecedesEtAl: 'never',
+      delimiter: ', ',
+    })
+    expect(result).toBe('J. Smith, B. Jones et al.')
+  })
+
+  it('delimiter-precedes-et-al="contextual" (default): delimiter only for 2+ shown names', () => {
+    const one = [{ family: 'Smith', given: 'J.' }, { family: 'Jones', given: 'B.' }]
+    // 1 shown name — no delimiter before et al.
+    expect(formatNames(one, { etAlMin: 2, etAlUseFirst: 1, delimiter: ', ' }))
+      .toBe('J. Smith et al.')
+
+    const three = [
+      { family: 'Smith', given: 'J.' },
+      { family: 'Jones', given: 'B.' },
+      { family: 'Chen', given: 'W.' },
+    ]
+    // 2 shown names — delimiter before et al.
+    expect(formatNames(three, { etAlMin: 3, etAlUseFirst: 2, delimiter: ', ' }))
+      .toBe('J. Smith, B. Jones, et al.')
+  })
+
+  it('delimiter-precedes-et-al="after-inverted-name"', () => {
+    const names = [{ family: 'Smith', given: 'John' }, { family: 'Jones', given: 'Jane' }]
+    // With name-as-sort-order — inverted names get delimiter
+    expect(formatNames(names, {
+      etAlMin: 2,
+      etAlUseFirst: 1,
+      delimiterPrecedesEtAl: 'after-inverted-name',
+      nameAsSortOrder: 'first',
+      delimiter: ', ',
+    })).toBe('Smith, John, et al.')
+
+    // Without name-as-sort-order — no delimiter
+    expect(formatNames(names, {
+      etAlMin: 2,
+      etAlUseFirst: 1,
+      delimiterPrecedesEtAl: 'after-inverted-name',
+      delimiter: ', ',
+    })).toBe('John Smith et al.')
+  })
+
+  // ── name-part formatting ────────────────────────────────────────────────
+
+  it('applies name-part text-case="uppercase" to family names', () => {
+    const names = [{ family: 'Smith', given: 'John' }]
+    expect(formatNames(names, {
+      nameParts: [{ name: 'family', textCase: 'uppercase' }],
+    })).toBe('John SMITH')
+  })
+
+  it('applies name-part text-case to given names', () => {
+    const names = [{ family: 'Smith', given: 'john andrew' }]
+    expect(formatNames(names, {
+      nameParts: [{ name: 'given', textCase: 'capitalize-all' }],
+    })).toBe('John Andrew Smith')
+  })
+
+  it('applies name-part font-variant="small-caps" using PUA tokens', () => {
+    const names = [{ family: 'Smith', given: 'John' }]
+    const result = formatNames(names, {
+      nameParts: [{ name: 'family', fontVariant: 'small-caps' }],
+    })
+    // Should contain PUA small-caps tokens around family name
+    expect(result).toContain('\uE004Smith\uE005')
+  })
+
+  it('applies name-part formatting in form="short"', () => {
+    const names = [{ family: 'Smith', given: 'John' }]
+    expect(formatNames(names, {
+      form: 'short',
+      nameParts: [{ name: 'family', textCase: 'uppercase' }],
+    })).toBe('SMITH')
   })
 })

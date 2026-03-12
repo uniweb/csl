@@ -763,15 +763,36 @@ Parser + codegen + core helpers + APA compilation. 69 tests.
 
 4. **Label variable="locator" is special.** Unlike other labels where the term name is derived from the variable name (page → "page", volume → "volume"), the locator label term comes from the cite's label property (page, chapter, verse, etc.) — a runtime value, not a compile-time constant.
 
-### v0.3 — Registry + expanded coverage (next)
+### v0.3 — Registry + semantic HTML + compiler gaps ✅
+
+Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
+
+**What was built:**
+- **Citation registry** (`@citestyle/registry`): `createRegistry(style)` → `addItems()`, `getItem()`, `cite()`, `getBibliography()`. Citation-number assignment, bibliography sorting via compiled comparator, subsequent-author-substitute.
+- **Semantic HTML**: Every CSL variable wrapped in `<span class="csl-{variable}">` via PUA token protocol (U+E020-E022). Enables CSS theming of individual fields.
+- **Name-part text-case**: `<name-part name="family" text-case="uppercase"/>` compiles correctly with text-case and font formatting on individual name parts.
+- **delimiter-precedes-et-al**: Full support for contextual/always/never/after-inverted-name modes.
+- **et-al-use-last fix**: "A, B, … Z" ellipsis pattern no longer adds "and" connector before last name.
+- **Citation non-mutation**: `cite()` uses spread instead of mutating original items when merging locator data.
+- **17 CSL test suite fixtures** passing (added namepart_TextCaseUppercase).
+
+**Key design discoveries:**
+
+1. **Semantic HTML via PUA tokens, not premature HTML.** The codegen wraps each variable's output in `\uE020className\uE021content\uE022` tokens. These pass through all text processing (punctuation normalization, group suppression, delimiter joining) unmodified, then `toHtml()` converts them to `<span>` tags at the final stage. This is the same strategy as the formatting tokens (U+E000-E007) — neutral markers that don't interfere with text operations.
+
+2. **toHtml() processing order is critical.** Auto-linking DOIs and URLs must happen BEFORE converting semantic tokens to HTML, because the PUA chars naturally act as URL boundaries. If converted first, the generated `<span>` tags create false matches for URL regex lookahead/lookbehind.
+
+3. **Punctuation normalization must know about all PUA ranges.** The double-period elimination regex (`._F._F`) uses a "filler" pattern to skip PUA chars between periods. When semantic tokens (U+E020-E022) were added, the filler pattern had to be extended from `[\uE000-\uE007]*` to `[\uE000-\uE007\uE020-\uE022]*` to prevent double periods like `Smith, J. A.\uE022. (2024)`.
+
+4. **Registry subsequent-author-substitute is a post-processing step.** The bibliography is formatted normally, then consecutive entries with the same author key get their author text replaced. HTML replacement uses the semantic `<span class="csl-author">` tag for precise targeting.
+
+### v0.4 — More styles + nocase spans (next)
 
 **Goals:**
-- Citation registry: year-suffix assignment, citation numbering, bibliography sorting
-- 5 more styles: Harvard, AMA, Turabian, Nature, Science
-- `parts` and `links` in FormattedEntry
+- 5 more styles (Harvard, AMA, Turabian, Nature, Science)
 - Nocase span support for text-case transforms
-- `name-part` text-case formatting (e.g., uppercase family names)
-- `delimiter-precedes-et-al` and `delimiter-precedes-last` advanced modes (`after-inverted-name`)
+- Year-suffix assignment in registry
+- Full name disambiguation
 - More CSL test suite fixtures (target: 30-40)
 
 ## Implementation Plan
@@ -789,26 +810,24 @@ Parser + codegen + core helpers + APA compilation. 69 tests.
 - IEEE and Vancouver (numeric styles) require `citation-number` variable support and different name formatting (no-sort, initials-only).
 - The `initialize-with=""` (empty string) semantics were a subtle but critical fix — Vancouver names went from "Smith J A" to "Smith JA".
 
-### Phase 3: Structured Output + Registry (in progress)
+### Phase 3: Structured Output + Registry ✅
 
-**HTML output done.** Formatting tokens (PUA U+E000-E007) → `toHtml()` conversion with auto-linked DOIs/URLs. CSS classes: `csl-entry`, `csl-citation`, `csl-doi`, `csl-url`, `csl-sc`, `csl-ul`.
+**Completed.** Full structured output (`{ text, html, parts, links }`). Semantic HTML with per-variable CSS classes. Citation registry with bibliography sorting, citation numbering, and subsequent-author-substitute.
 
-**Still needed:**
-- `parts` extraction (decomposed fields for custom layouts)
-- `links` extraction (DOI, URL, PDF)
-- Citation registry (year-suffix, numbering, sorting)
-- Locator support in more styles
+- **Semantic HTML tokens** (U+E020-E022): codegen wraps each variable in PUA markers, converted to `<span class="csl-{variable}">` by `toHtml()`
+- **Registry API**: `createRegistry(style)` → `addItems()`, `getItem()`, `cite()`, `getBibliography()`
+- **parts/links**: Already working from v0.2 codegen; parts extracts raw field values, links extracts DOI/URL/PDF
 
 ### Phase 4: Test Suite + Top 10 Styles (in progress)
 
 **Test harness done.** Runner at `test/csl-suite.test.js` handles: variant section delimiters, CITATION-ITEMS with locators, HTML stripping from expected output, entity decoding, quote normalization. Auto-skips deferred features.
 
-**16 fixtures passing.** Coverage: names (et-al, inverted, initials, author-count), text-case (title), groups (suppression, nesting), conditions (type, variable any/all), labels (empty, plural), affixes (intervening empty), dates (month, accessed), decorations (quotes).
+**17 fixtures passing.** Coverage: names (et-al, inverted, initials, author-count, name-part text-case), text-case (title), groups (suppression, nesting), conditions (type, variable any/all), labels (empty, plural), affixes (intervening empty), dates (month, accessed), decorations (quotes).
 
 **Still needed:**
 - 5 more styles (Harvard, AMA, Turabian, Nature, Science)
 - More fixtures targeting: number formatting, date ranges, sort, substitute chains
-- Nocase span support, name-part formatting
+- Nocase span support
 
 ### Phase 5: Scholar Integration + CLI
 

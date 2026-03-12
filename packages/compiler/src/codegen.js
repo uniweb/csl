@@ -100,13 +100,20 @@ function buildMeta(ast) {
   const id = info.id || ''
   const shortId = id.replace(/^.*\//, '')
 
-  return {
+  const meta = {
     id: shortId,
     title: info.title || '',
     class: ast.class,
     version: ast.version,
     compiledWith: '@citestyle/compiler@0.1.0',
   }
+
+  // Expose bibliography-level settings for registry use
+  if (ast.bibliography?.subsequentAuthorSubstitute != null) {
+    meta.subsequentAuthorSubstitute = ast.bibliography.subsequentAuthorSubstitute
+  }
+
+  return meta
 }
 
 function buildTermsObject(locale) {
@@ -193,8 +200,8 @@ function _extractLinks(item) {
 
 function _normalizePunctuation(str) {
   if (!str) return ''
-  // F matches formatting tokens (PUA U+E000-E007) that may appear between dots
-  const F = '[\\uE000-\\uE007]*'
+  // F matches PUA tokens (formatting U+E000-E007 and semantic U+E020-E022) that may appear between dots
+  const F = '[\\uE000-\\uE007\\uE020-\\uE022]*'
   return str
     .replace(new RegExp('([.!?])(' + F + ')\\\\. ', 'g'), '$1$2 ')
     .replace(new RegExp('\\\\.(' + F + ')\\\\.', 'g'), '.$1')
@@ -216,8 +223,8 @@ function generateCitation(citNode, ctx) {
   return `export function citation(cites, ctx = {}) {
   ctx = { ...ctx, _secOpts: CIT_NAME_OPTS }
   const rendered = cites.map(cite => {
-    const item = cite.item || cite
-    if (cite.locator != null) { item.locator = cite.locator; item._locatorLabel = cite.label || 'page' }
+    let item = cite.item || cite
+    if (cite.locator != null) { item = { ...item, locator: cite.locator, _locatorLabel: cite.label || 'page' } }
 ${body.code}
     return [${body.parts.join(', ')}].filter(v => v !== '').join('')
   })
@@ -351,6 +358,10 @@ function generateTextElement(node, ctx, indent) {
   expr = applyFormatting(expr, node)
   // Apply affixes
   expr = applyAffixes(expr, node)
+  // Apply semantic class for variable-based text elements
+  if (node.variable) {
+    expr = wrapSemantic(expr, node.variable)
+  }
 
   return { code, expr }
 }
@@ -373,6 +384,7 @@ function generateNumberElement(node, ctx, indent) {
 
   expr = applyFormatting(expr, node)
   expr = applyAffixes(expr, node)
+  expr = wrapSemantic(expr, node.variable)
 
   return { code, expr }
 }
@@ -646,6 +658,9 @@ function generateNamesElement(node, ctx, indent) {
       lines.push(`${indent}  if (${v}) ${v} += ' ' + ${labelGen.expr}`)
     }
 
+    // Semantic wrapping for this name variable
+    lines.push(`${indent}  if (${v}) ${v} = '\\uE020${variable}\\uE021' + ${v} + '\\uE022'`)
+
     lines.push(`${indent}}`)
   }
 
@@ -686,6 +701,19 @@ function buildElementNameOpts(nameNode, ctx) {
   if (nameNode.nameAsSortOrder != null) opts.nameAsSortOrder = nameNode.nameAsSortOrder
   if (nameNode.sortSeparator != null) opts.sortSeparator = nameNode.sortSeparator
   if (nameNode.form && nameNode.form !== 'long') opts.form = nameNode.form
+  if (nameNode.delimiterPrecedesEtAl != null) opts.delimiterPrecedesEtAl = nameNode.delimiterPrecedesEtAl
+
+  // Name-part formatting (text-case, font formatting on family/given)
+  if (nameNode.nameParts && nameNode.nameParts.length > 0) {
+    opts.nameParts = nameNode.nameParts.map(np => {
+      const part = { name: np.name }
+      if (np.textCase) part.textCase = np.textCase
+      if (np.fontStyle) part.fontStyle = np.fontStyle
+      if (np.fontWeight) part.fontWeight = np.fontWeight
+      if (np.fontVariant) part.fontVariant = np.fontVariant
+      return part
+    })
+  }
 
   // Store et-al term name for runtime resolution
   const etAlNode = nameNode.etAlNode
@@ -739,6 +767,9 @@ function generateDateElement(node, ctx, indent) {
   let expr = v
   expr = applyFormatting(expr, node)
   expr = applyAffixes(expr, node)
+  if (variable) {
+    expr = wrapSemantic(expr, variable)
+  }
 
   return { code, expr }
 }
@@ -791,6 +822,16 @@ function applyAffixes(expr, node) {
 
   if (parts.length === 1) return parts[0]
   return `(${expr} ? ${parts.join(' + ')} : '')`
+}
+
+/**
+ * Wrap an expression in semantic span tokens for HTML CSS class output.
+ * Uses PUA tokens: \uE020 className \uE021 content \uE022
+ * toHtml() converts these to <span class="csl-className">content</span>
+ * stripFormatting() removes them for plain text.
+ */
+function wrapSemantic(expr, className) {
+  return `(${expr} ? '\\uE020${className}\\uE021' + ${expr} + '\\uE022' : '')`
 }
 
 // ── Utility ──────────────────────────────────────────────────────────────────

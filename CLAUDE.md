@@ -81,12 +81,20 @@ Parser → codegen → compiled APA output. Core helpers for names, dates, text-
 - **Locator support**: `<text variable="locator"/>` and `<label variable="locator"/>` work in citation layouts with plural detection
 - **113 tests total** across 10 test files
 
-### Next: v0.3 — Registry + more styles
-- Citation registry (year-suffix, numbering, bibliography sorting)
+### v0.3 — Registry + semantic HTML + compiler gaps (complete)
+- **Citation registry** (`@citestyle/registry`): `createRegistry(style)` → `addItems()`, `cite()`, `getBibliography()`. Citation-number assignment, bibliography sorting, subsequent-author-substitute.
+- **Semantic HTML**: Every CSL variable wrapped in `<span class="csl-{variable}">` — enables CSS theming of individual fields (`.csl-author`, `.csl-title`, `.csl-container-title`, `.csl-issued`, `.csl-volume`, `.csl-page`, `.csl-DOI`, etc.)
+- **Name-part text-case**: `<name-part name="family" text-case="uppercase"/>` now compiles correctly — name parts get text-case and font formatting
+- **delimiter-precedes-et-al**: Full support for contextual/always/never/after-inverted-name modes
+- **et-al-use-last**: Fixed "A, B, … Z" ellipsis pattern (no "and" connector before last name)
+- **Citation non-mutation**: `cite()` no longer mutates original item objects when locators are present
+- **147 tests total** across 11 test files (22 name, 14 HTML, 12 registry, 30 style, 17 CSL fixtures)
+
+### Next: v0.4 — More styles + nocase spans
 - 5 more styles (Harvard, AMA, Turabian, Nature, Science)
-- `parts` and `links` in structured output
 - Nocase span support for text-case transforms
-- `name-part` text-case formatting
+- Year-suffix assignment in registry
+- Full name disambiguation
 
 ## Technical Decisions
 
@@ -152,10 +160,15 @@ Compiled styles use Unicode Private Use Area characters (U+E000-E007) as formatt
 | U+E002 / U+E003 | Bold start/end | `<b>` / `</b>` |
 | U+E004 / U+E005 | Small-caps start/end | `<span class="csl-sc">` / `</span>` |
 | U+E006 / U+E007 | Underline start/end | `<span class="csl-ul">` / `</span>` |
+| U+E020 | Semantic span open | Followed by class name (e.g., `author`) |
+| U+E021 | Semantic separator | Separates class name from content |
+| U+E022 | Semantic span close | `</span>` |
 
-- `toHtml(str)` — converts tokens to HTML tags, also auto-links DOIs and URLs
-- `stripFormatting(str)` — removes tokens for clean plain text
-- Punctuation normalization (`_normalizePunctuation`) is PUA-aware — won't break on tokens between dots
+Semantic spans encode per-variable CSS classes: `\uE020author\uE021John Smith\uE022` → `<span class="csl-author">John Smith</span>`. This enables CSS theming of individual fields without premature HTML generation.
+
+- `toHtml(str)` — converts tokens to HTML tags, also auto-links DOIs and URLs. **Processing order matters**: escape HTML → auto-link DOIs → auto-link URLs → convert formatting tokens → convert semantic tokens.
+- `stripFormatting(str)` — removes all PUA tokens (formatting + semantic) for clean plain text
+- Punctuation normalization (`_normalizePunctuation`) is PUA-aware — won't break on tokens between dots. The F pattern includes ranges `\uE000-\uE007` and `\uE020-\uE022`.
 
 ## HTML Escaping
 
@@ -165,17 +178,18 @@ Compiled styles use Unicode Private Use Area characters (U+E000-E007) as formatt
 
 Three test layers:
 
-1. **Unit tests** (`packages/core/test/`, `packages/compiler/test/`) — Core helpers (names, dates, text-case, numbers, pages, HTML) and compiler (parser, compilation, 5 real styles). 97 tests.
+1. **Unit tests** (`packages/core/test/`, `packages/compiler/test/`) — Core helpers (names, dates, text-case, numbers, pages, HTML) and compiler (parser, compilation, 5 real styles). Registry tests. 108 tests.
 
-2. **CSL test suite fixtures** (`test/csl-suite.test.js`, `test/csl-fixtures/`) — Adapted from `github.com/citation-style-language/test-suite`. Each fixture has MODE, CSL, INPUT, RESULT sections; some also have CITATION-ITEMS (per-cite locator data). The runner compiles the embedded CSL, feeds INPUT, compares `.text` output against RESULT. 16 fixtures passing. Auto-skips fixtures using deferred features (ibid, disambiguation, collapsing) or nocase spans.
+2. **CSL test suite fixtures** (`test/csl-suite.test.js`, `test/csl-fixtures/`) — Adapted from `github.com/citation-style-language/test-suite`. Each fixture has MODE, CSL, INPUT, RESULT sections; some also have CITATION-ITEMS (per-cite locator data). The runner compiles the embedded CSL, feeds INPUT, compares `.text` output against RESULT. 17 fixtures passing. Auto-skips fixtures using deferred features (ibid, disambiguation, collapsing) or nocase spans.
 
-3. **Style integration tests** (`packages/compiler/test/styles.test.js`) — Compile real .csl files (APA, MLA, Chicago, IEEE, Vancouver), format sample items, verify text and HTML output. 28 tests.
+3. **Style integration tests** (`packages/compiler/test/styles.test.js`) — Compile real .csl files (APA, MLA, Chicago, IEEE, Vancouver), format sample items, verify text and HTML output including semantic CSS classes. 30 tests.
 
-Run all tests: `npx vitest run` (113 tests, ~700ms).
+4. **Registry integration tests** (`packages/registry/test/registry.test.js`) — Registry API with compiled styles (APA, IEEE, MLA), citation numbering, bibliography sorting, subsequent-author-substitute. 12 tests.
+
+Run all tests: `npx vitest run` (147 tests, ~700ms).
 
 ### Known limitations (skip markers in test runner)
 - `position=`, `ibid` — footnote-centric features
 - `disambiguate-` — name/cite disambiguation
 - `collapse=` — cite collapsing
 - `<span class="nocase">` — case-protection in variable values
-- `name-part` text-case formatting (e.g., `text-case="uppercase"` on family name)

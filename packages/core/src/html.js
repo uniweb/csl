@@ -21,17 +21,25 @@ export function escapeHtml(str) {
  * Formatting tokens — Unicode Private Use Area characters embedded in
  * text output by compiled styles to mark formatting spans. These are
  * invisible in plain text and get converted to HTML tags by toHtml().
+ *
+ * Font formatting tokens (U+E000-E007):
+ *   U+E000/E001 = italic start/end
+ *   U+E002/E003 = bold start/end
+ *   U+E004/E005 = small-caps start/end
+ *   U+E006/E007 = underline start/end
+ *
+ * Semantic span tokens (U+E020-E022):
+ *   U+E020 = semantic span start (followed by class name until U+E021)
+ *   U+E021 = separator between class name and content
+ *   U+E022 = semantic span end
+ *
+ * Example: \uE020title\uE021My Book Title\uE022
+ *   → stripFormatting: "My Book Title"
+ *   → toHtml: '<span class="csl-title">My Book Title</span>'
  */
-const FMT_ITALIC_START = '\uE000'
-const FMT_ITALIC_END = '\uE001'
-const FMT_BOLD_START = '\uE002'
-const FMT_BOLD_END = '\uE003'
-const FMT_SMALLCAPS_START = '\uE004'
-const FMT_SMALLCAPS_END = '\uE005'
-const FMT_UNDERLINE_START = '\uE006'
-const FMT_UNDERLINE_END = '\uE007'
-
 const FMT_REGEX = /[\uE000-\uE007]/g
+const SEM_OPEN_REGEX = /\uE020[^\uE021]*\uE021/g
+const SEM_CLOSE = /\uE022/g
 
 /**
  * Strip formatting tokens from text output.
@@ -41,16 +49,24 @@ const FMT_REGEX = /[\uE000-\uE007]/g
  */
 export function stripFormatting(str) {
   if (!str) return ''
-  return str.replace(FMT_REGEX, '')
+  return str
+    .replace(SEM_OPEN_REGEX, '')  // strip semantic open markers + class names
+    .replace(FMT_REGEX, '')        // strip font formatting tokens
+    .replace(SEM_CLOSE, '')        // strip semantic close markers
 }
 
 /**
  * Convert a formatted text string to semantic HTML.
  *
+ * Processing order matters — auto-linking must happen while PUA tokens
+ * are still in the string (before they become HTML tags that would
+ * interfere with URL matching), then tokens are converted to HTML.
+ *
  * 1. Escapes HTML entities (XSS protection)
- * 2. Converts formatting tokens to HTML tags (italic, bold, etc.)
- * 3. Auto-links DOI URLs
- * 4. Auto-links other URLs
+ * 2. Auto-links DOI URLs (while PUA tokens still present)
+ * 3. Auto-links other URLs (while PUA tokens still present)
+ * 4. Converts formatting tokens to HTML tags (italic, bold, etc.)
+ * 5. Converts semantic tokens to CSS-classed spans
  *
  * @param {string} str - Text with optional formatting tokens
  * @returns {string} HTML string
@@ -60,6 +76,28 @@ export function toHtml(str) {
 
   // Escape HTML entities first (tokens are PUA chars, unaffected)
   let html = escapeHtml(str)
+
+  // Auto-link DOI URLs (before token conversion — PUA chars used as URL boundaries)
+  // The [^\s<)\uE000-\uE022] excludes PUA tokens from URL matching
+  html = html.replace(
+    /https:\/\/doi\.org\/[^\s<)\uE000-\uE022]+/g,
+    match => {
+      const cleaned = match.replace(/[.,;:]+$/, '')
+      const trailing = match.slice(cleaned.length)
+      return `<a class="csl-doi" href="${cleaned}">${cleaned}</a>${trailing}`
+    }
+  )
+
+  // Auto-link remaining URLs (exclude PUA tokens from URL boundaries)
+  html = html.replace(
+    /(?<!href="|">)https?:\/\/[^\s<)\uE000-\uE022]+/g,
+    match => {
+      if (match.includes('doi.org/')) return match
+      const cleaned = match.replace(/[.,;:]+$/, '')
+      const trailing = match.slice(cleaned.length)
+      return `<a class="csl-url" href="${cleaned}">${cleaned}</a>${trailing}`
+    }
+  )
 
   // Convert formatting tokens to HTML tags
   html = html
@@ -72,28 +110,11 @@ export function toHtml(str) {
     .replace(/\uE006/g, '<span class="csl-ul">')
     .replace(/\uE007/g, '</span>')
 
-  // Auto-link DOI URLs (must come before general URL linking)
-  html = html.replace(
-    /https:\/\/doi\.org\/[^\s<)]+/g,
-    match => {
-      // Strip trailing punctuation that isn't part of the DOI
-      const cleaned = match.replace(/[.,;:]+$/, '')
-      const trailing = match.slice(cleaned.length)
-      return `<a class="csl-doi" href="${cleaned}">${cleaned}</a>${trailing}`
-    }
+  // Convert semantic span tokens to CSS-classed spans
+  html = html.replace(/\uE020([^\uE021]*)\uE021/g, (_, cls) =>
+    `<span class="csl-${cls}">`
   )
-
-  // Auto-link remaining URLs (not already inside an <a> tag)
-  html = html.replace(
-    /(?<!href="|">)https?:\/\/[^\s<)]+/g,
-    match => {
-      // Skip if this URL was already linked as a DOI
-      if (match.includes('doi.org/')) return match
-      const cleaned = match.replace(/[.,;:]+$/, '')
-      const trailing = match.slice(cleaned.length)
-      return `<a class="csl-url" href="${cleaned}">${cleaned}</a>${trailing}`
-    }
-  )
+  html = html.replace(/\uE022/g, '</span>')
 
   return html
 }
