@@ -133,7 +133,14 @@ Parser → codegen → compiled APA output. Core helpers for names, dates, text-
 - **CLI improvements**: `citestyle check <file>` validates CSL without compiling (reports warnings). `--format cjs` output. Batch mode: `citestyle compile styles/*.csl -o dist/`. Multi-locale: `--locale en-US,fr-FR`. Better error messages with source location.
 - **386 tests total** across 14 test files (80 core, 147 compiler, 38 registry, 66 CSL fixtures, 35 BibTeX, 20 RIS)
 
-### Next: v0.8 — ibid/subsequent + more styles + Scholar integration
+### v0.8 — Types + exports + hardening + docs (complete)
+- **TypeScript type definitions**: Complete, accurate types for all public APIs in `@citestyle/types`. Covers CslItem (all CSL name/date/number variables + `year-suffix` + index signature), StyleMeta (all disambiguation/collapse/delimiter fields), CompiledStyle (optional `bibliography`/`citation`), Registry (`getItem`, `size`), FormatContext (`_secOpts`, `_disambig`), DisambiguationContext, NameFormatConfig, DateFormatConfig, CompileOptions/CompileResult. Function declarations for compiler, core, bibtex, ris.
+- **Package.json exports maps**: Every package has proper `exports` with `types` and `import` conditions. Per-package `types.d.ts` re-export files. Styles package uses `typesVersions` for wildcard type resolution.
+- **Compiler stress-tested**: 24 additional styles compiled and executed successfully (44 total verified), including law review (Bluebook), medical (BMJ, Lancet, PLOS), chemistry (ACS, Angewandte), physics (AIP), German (DIN, GOST), ISO 690, and multi-language styles. No parser or codegen crashes.
+- **Package READMEs**: Practical README for each package (compiler, core, registry, styles, bibtex, ris, types) with usage examples and API reference.
+- **439 tests total** across 17 test files (80 core, 147 compiler, 38 registry, 66 CSL fixtures, 35 BibTeX, 20 RIS, 6 exports, 26 stress, 21 types)
+
+### Next: v0.9 — ibid/subsequent + more styles + Scholar integration
 - ibid/subsequent position for note styles
 - 5 more styles (toward 25 total)
 - Scholar integration planning
@@ -223,7 +230,7 @@ Semantic spans encode per-variable CSS classes: `\uE020author\uE021John Smith\uE
 
 ## Testing
 
-Six test layers:
+Nine test layers:
 
 1. **Unit tests** (`packages/core/test/`) — Core helpers (names 22, dates 8, text-case+nocase 21, numbers 6, pages 6, HTML 17). 80 tests.
 
@@ -237,7 +244,13 @@ Six test layers:
 
 6. **RIS tests** (`packages/ris/test/ris.test.js`) — Parser (journal, book, thesis, dates, keywords, editors, types), serializer, round-trip. 20 tests.
 
-Run all tests: `npx vitest run` (386 tests, ~1.4s).
+7. **Export verification** (`test/exports.test.js`) — Verifies all packages export documented functions with no unexpected exports. 6 tests.
+
+8. **Stress tests** (`test/stress.test.js`) — Compiles 24 additional CSL styles from the official repository and verifies valid output. 26 tests.
+
+9. **Type accuracy** (`test/types.test.js`) — Verifies TypeScript definitions match runtime shapes for all APIs. 21 tests.
+
+Run all tests: `npx vitest run` (439 tests, ~1.5s).
 
 ### Known limitations (skip markers in test runner)
 - `position=`, `ibid` — footnote-centric features

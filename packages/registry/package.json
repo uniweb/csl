@@ -4,9 +4,12 @@
   "description": "Citation registry: year-suffixes, numbering, sorting (~5-8KB)",
   "type": "module",
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "types": "./types.d.ts",
+      "import": "./src/index.js"
+    }
   },
-  "files": ["src", "README.md"],
+  "files": ["src", "types.d.ts", "README.md"],
   "scripts": {
     "test": "vitest run --passWithNoTests",
     "lint": "echo 'TODO: configure linter'"

@@ -923,6 +923,17 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 - **CLI**: `citestyle check <file>` validates CSL (AST structure, undefined macros). `--format cjs` converts ESM output to CommonJS. Batch mode for multiple files. Multi-locale `--locale en-US,fr-FR`. Better error messages with line/column from XML parse errors.
 - **35 BibTeX tests**, **20 RIS tests**, **11 CLI tests**.
 
+### Phase 4.8: Types + Exports + Hardening + Docs ✅
+
+**Completed.** TypeScript types, package.json exports, stress testing, READMEs. 439 tests total.
+
+- **TypeScript type definitions**: Complete types in `@citestyle/types` for all public APIs. Includes CslItem (all CSL variables + index signature for forward compat), StyleMeta (disambiguation/collapse/delimiter fields matching codegen's `buildMeta`), CompiledStyle (optional bibliography/citation — some styles like Bluebook are citation-only), Registry (getItem, size), FormatContext (_secOpts, _disambig), DisambiguationContext, NameFormatConfig, DateFormatConfig, CompileOptions/CompileResult, function declarations for all packages.
+- **Package exports**: Every package has `exports` with `types` + `import` conditions. Per-package `types.d.ts` re-export files. Styles package uses `typesVersions` for wildcard type resolution.
+- **Stress testing**: 24 additional CSL styles from the official repository compiled and executed — 44 total verified. Includes Bluebook (law), BMJ/Lancet/PLOS (medical), ACS/Angewandte (chemistry), AIP (physics), DIN/GOST (German/Russian), ISO 690, MDPI, Taylor & Francis, and others. Found that Bluebook is citation-only (no bibliography) — types updated to make bibliography optional.
+- **READMEs**: Practical README for each of the 7 packages with usage examples and API reference.
+- **New tests**: 6 export verification, 26 stress, 21 type accuracy.
+- Design discovery #16: Some CSL styles are citation-only (no `<bibliography>` element) — the Bluebook Law Review style defines only `<citation>`. The CompiledStyle interface must make `bibliography` optional.
+
 ### Phase 5: Scholar Integration
 
 **Not started.** Depends on registry completion.
@@ -1016,9 +1027,9 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 - [ ] Scholar integration working (backward-compatible API)
 - [x] CLI: `csl compile <file>` (basic)
 - [x] CLI: `citestyle compile` with locale, format, batch, and check options
-- [ ] TypeScript types for all public APIs
+- [x] TypeScript types for all public APIs
 - [ ] Published to npm under `@citestyle/*` scope
-- [ ] Documentation with examples and migration guide
+- [x] Documentation with examples and migration guide (per-package READMEs)
 - [ ] Web display styles: `compact` and `card` rendering modes
 - [x] BibTeX and RIS parsing + serialization in `@citestyle/bibtex` and `@citestyle/ris`
 
@@ -1063,7 +1074,7 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 | **Debugging** | Hard (monolithic) | Hard (WASM) | Medium | Easy | **Easy (readable JS)** |
 | **Build-time cost** | None (all runtime) | None (all runtime) | None (all runtime) | None | **Compilation step** |
 | **ibid/near-note** | Full | Partial | Full | No | **Deferred (plugin)** |
-| **Disambiguation** | Full | Partial | Full | No | **Year-suffix only (v1)** |
+| **Disambiguation** | Full | Partial | Full | No | **Full (year-suffix, add-givenname, add-names)** |
 | **Web display modes** | None | None | None | None | **compact, card, minimal, rich** |
 | **Extended metadata** | No | No | No | No | **code, data, slides, video, preprint links** |
 

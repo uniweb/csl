@@ -15,7 +15,12 @@
     "./nature": "./nature.js",
     "./science": "./science.js"
   },
-  "files": ["*.js", "README.md"],
+  "typesVersions": {
+    "*": {
+      "*": ["./types.d.ts"]
+    }
+  },
+  "files": ["*.js", "types.d.ts", "README.md"],
   "scripts": {
     "build": "echo 'TODO: compile styles from CSL sources'"
   },

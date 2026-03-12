@@ -4,6 +4,7 @@ dist/
 
 # Test temp files
 test/.tmp/
+stress-test/
 
 # Editor / OS
 .DS_Store

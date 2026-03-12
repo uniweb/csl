@@ -300,7 +300,8 @@ Compiled CSL styles ignore extended fields (they only use standard CSL fields fo
 | `@citestyle/core` | Shared runtime helpers (name/date formatting, text-case) | ~6-8KB |
 | `@citestyle/registry` | Citation state (year-suffixes, numbering, sorting) | ~5-8KB |
 | `@citestyle/styles` | Pre-compiled popular styles | ~3-5KB each |
-| `@citestyle/bibtex` | BibTeX ↔ CSL-JSON parser | Optional |
+| `@citestyle/bibtex` | BibTeX ↔ CSL-JSON parser/serializer | Optional |
+| `@citestyle/ris` | RIS ↔ CSL-JSON parser/serializer | Optional |
 | `@citestyle/types` | TypeScript type definitions | Dev dependency |
 
 ### What the compiler does
@@ -320,22 +321,25 @@ The compiled module exports `bibliography()`, `citation()`, and `bibliographySor
 
 ## CSL coverage
 
-**Full support** in v1: text output, conditionals, macros, groups (with suppression), names (et-al, particles, ordering, substitute), dates (localized, ranges, seasons), numbers (ordinal, roman), labels, formatting (italic, bold, etc.), affixes, text-case, sorting, page ranges, year suffixes, subsequent-author-substitute, dependent styles.
+**Full support**: text output, conditionals, macros, groups (with suppression), names (et-al, particles, ordering, substitute, name-part formatting), dates (localized, ranges, seasons), numbers (ordinal, roman), labels, formatting (italic, bold, small-caps, underline), affixes, text-case (with nocase span protection), sorting, page ranges, year suffixes, subsequent-author-substitute, name disambiguation (5 rules), cite collapsing (numeric + author-date), BibTeX/RIS import/export. 20 styles compile and pass integration tests; 44 styles stress-tested.
 
-**Deferred** (low value for web): ibid/subsequent position, near-note distance, full name disambiguation, cite collapsing, CSL-M extensions.
+**Deferred** (low value for web): ibid/subsequent position, near-note distance, CSL-M extensions.
 
-This covers the vast majority of real-world styles. The deferred features are footnote-centric or journal-submission-specific — on the web, links resolve ambiguity and footnote styles are rare.
+This covers the vast majority of real-world styles. The deferred features are footnote-centric — on the web, links resolve ambiguity and footnote styles are rare.
 
 ## Roadmap
 
-| Milestone | Scope |
-|---|---|
-| **v0.1** | CSL parser, core codegen, first compiled style (APA) |
-| **v0.2** | Full name/date formatting, locale resolution, `@citestyle/core` |
-| **v0.3** | Structured output (HTML + parts), citation registry |
-| **v0.4** | Test suite validation, top 10 styles compiled |
-| **v1.0** | CLI, pre-compiled styles package, `compact` + `card` display styles, docs |
-| **Post-v1** | `minimal` + `rich` display styles, extended metadata, Vite plugin, registry plugins for deferred features |
+| Milestone | Scope | Status |
+|---|---|---|
+| **v0.1** | CSL parser, core codegen, first compiled style (APA) | Done |
+| **v0.2** | Multi-style, structured output, CSL test suite | Done |
+| **v0.3** | Registry, semantic HTML, compiler gaps | Done |
+| **v0.4** | 10 styles, year-suffix, second-field-align | Done |
+| **v0.5** | Nocase spans, cite collapsing, 15 styles | Done |
+| **v0.6** | Name disambiguation, author-date collapsing, 20 styles | Done |
+| **v0.7** | BibTeX/RIS parsers, CLI improvements | Done |
+| **v0.8** | TypeScript types, exports, stress testing, docs | Done |
+| **v1.0** | Pre-compiled styles package, `compact` + `card` display styles | Next |
 
 ## Inspiration
 

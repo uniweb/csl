@@ -4,7 +4,10 @@
   "description": "Build-time compiler: CSL XML → JavaScript modules",
   "type": "module",
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "types": "./types.d.ts",
+      "import": "./src/index.js"
+    }
   },
   "bin": {
     "citestyle": "./src/cli.js"
@@ -12,6 +15,7 @@
   "files": [
     "src",
     "locales",
+    "types.d.ts",
     "README.md"
   ],
   "scripts": {
