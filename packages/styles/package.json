@@ -11,7 +11,6 @@
     "./vancouver": "./vancouver.js",
     "./harvard": "./harvard.js",
     "./ama": "./ama.js",
-    "./turabian": "./turabian.js",
     "./nature": "./nature.js",
     "./science": "./science.js"
   },
@@ -28,10 +27,11 @@
     "README.md"
   ],
   "scripts": {
-    "build": "echo 'TODO: compile styles from CSL sources'"
+    "build": "node build.js",
+    "prepack": "node build.js"
   },
   "dependencies": {
-    "@citestyle/core": "workspace:*"
+    "@citestyle/core": "^0.0.2"
   },
   "license": "MIT"
 }

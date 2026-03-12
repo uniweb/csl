@@ -41,6 +41,7 @@ const PACKAGES = [
   { name: '@citestyle/registry', path: 'packages/registry' },
   { name: '@citestyle/styles', path: 'packages/styles' },
   { name: '@citestyle/bibtex', path: 'packages/bibtex' },
+  { name: '@citestyle/ris', path: 'packages/ris' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -366,6 +367,42 @@ function analyzePackages() {
 }
 
 // ---------------------------------------------------------------------------
+// Build
+// ---------------------------------------------------------------------------
+
+/**
+ * Run build scripts for packages that have them (e.g., @citestyle/styles).
+ * Must run before publishing so that compiled artifacts are included in the tarball.
+ */
+function buildPackages() {
+  log(`\n${c.bright}${c.cyan}Running package builds${c.reset}`)
+  log(`${c.dim}${'─'.repeat(40)}${c.reset}`)
+
+  // Check which packages have a build script (skip placeholder echoes)
+  const packagesWithBuild = PACKAGES.filter((pkg) => {
+    const pkgJson = readPackageJson(pkg.path)
+    const buildScript = pkgJson?.scripts?.build
+    return buildScript && !buildScript.startsWith('echo ')
+  })
+
+  if (packagesWithBuild.length === 0) {
+    info('No packages have build scripts — skipping')
+    return
+  }
+
+  for (const pkg of packagesWithBuild) {
+    info(`Building ${pkg.name}...`)
+    try {
+      exec(`pnpm run build`, { cwd: join(ROOT, pkg.path) })
+      success(`Built ${pkg.name}`)
+    } catch (err) {
+      error(`Build failed for ${pkg.name}: ${err.message}`)
+      process.exit(1)
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Publishing
 // ---------------------------------------------------------------------------
 
@@ -567,6 +604,9 @@ async function main() {
     log('\nAborted.')
     return
   }
+
+  // Build packages that need compilation (e.g., @citestyle/styles)
+  buildPackages()
 
   // Publish
   const published = await publishPackages(toPublish, packages, { dryRun: false, bump })
