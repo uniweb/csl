@@ -30,10 +30,10 @@ importers:
       '@citestyle/types':
         specifier: workspace:*
         version: link:../types
-    devDependencies:
       '@xmldom/xmldom':
         specifier: ^0.8.11
         version: 0.8.11
+    devDependencies:
       vitest:
         specifier: ^3.1.1
         version: 3.2.4
@@ -49,6 +49,16 @@ importers:
       '@citestyle/core':
         specifier: workspace:*
         version: link:../core
+      '@citestyle/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      vitest:
+        specifier: ^3.1.1
+        version: 3.2.4
+
+  packages/ris:
+    dependencies:
       '@citestyle/types':
         specifier: workspace:*
         version: link:../types

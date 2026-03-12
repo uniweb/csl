@@ -16,7 +16,8 @@ packages/
 ├── core/         # @citestyle/core — shared runtime helpers (~6-8KB)
 ├── registry/     # @citestyle/registry — citation state (~5-8KB)
 ├── styles/       # @citestyle/styles — pre-compiled popular styles (~3-5KB each)
-├── bibtex/       # @citestyle/bibtex — BibTeX ↔ CSL-JSON parser
+├── bibtex/       # @citestyle/bibtex — BibTeX ↔ CSL-JSON parser/serializer
+├── ris/          # @citestyle/ris — RIS ↔ CSL-JSON parser/serializer
 └── types/        # @citestyle/types — TypeScript type definitions
 ```
 
@@ -24,11 +25,12 @@ packages/
 
 | Package | Runtime? | Purpose |
 |---|---|---|
-| **compiler** | No (build tool) | Parses CSL XML, resolves macros/locales, emits JS modules |
+| **compiler** | No (build tool) | Parses CSL XML, resolves macros/locales, emits JS modules. CLI: `citestyle compile`, `citestyle check`. |
 | **core** | Yes (~6-8KB) | Name formatting, date formatting, text-case, ordinals, page ranges, HTML escaping. Imported by all compiled styles. |
 | **registry** | Yes (~5-8KB) | Tracks cross-citation state: year-suffix assignment, citation numbering, bibliography sorting, subsequent-author-substitute |
 | **styles** | Yes (~3-5KB each) | Pre-compiled popular styles (APA, MLA, Chicago, IEEE, etc.). Built by running the compiler on official CSL files. |
-| **bibtex** | Yes | BibTeX ↔ CSL-JSON conversion |
+| **bibtex** | Yes | BibTeX ↔ CSL-JSON: `parseBibtex(str)` → CSL-JSON[], `exportBibtex(items)` → BibTeX string. LaTeX accent conversion, @string abbreviations, name parsing. |
+| **ris** | Yes | RIS ↔ CSL-JSON: `parseRis(str)` → CSL-JSON[], `exportRis(items)` → RIS string. Tagged format with TY/ER delimiters. |
 | **types** | No (types only) | TypeScript definitions for CslItem, CslName, CslDate, FormattedEntry, CompiledStyle, Registry |
 
 ### Key dependency flow
@@ -66,6 +68,13 @@ pnpm install          # Install + link local packages
 pnpm build            # Build all packages
 pnpm test             # Run tests across all packages (vitest)
 pnpm lint             # Lint all packages
+
+# CLI (via @citestyle/compiler)
+citestyle compile <input.csl> -o <output.js>           # Compile single style
+citestyle compile styles/*.csl -o dist/                 # Batch compile
+citestyle compile apa.csl --locale fr-FR -o apa-fr.js   # With locale
+citestyle compile apa.csl --format cjs -o apa.cjs       # CommonJS output
+citestyle check <input.csl>                             # Validate without compiling
 ```
 
 ## Implementation Status
@@ -118,7 +127,13 @@ Parser → codegen → compiled APA output. Core helpers for names, dates, text-
 - **Locale date format compatibility**: Parser locale overrides produce `dateParts`, locale XML files produce `parts` — codegen checks both.
 - **320 tests total** across 11 test files (80 core, 114 compiler, 38 registry, 66 CSL fixtures + 22 name disambiguation/collapsing)
 
-### Next: v0.7 — ibid/subsequent + more styles + Scholar integration
+### v0.7 — BibTeX + RIS parsers + CLI improvements (complete)
+- **BibTeX parser** (`@citestyle/bibtex`): `parseBibtex(str)` → CSL-JSON array. Handles 15 entry types, LaTeX accent/command conversion (ä, é, ñ, ß, ø, etc.), @string abbreviations, # concatenation, braced/quoted values, month abbreviations, name parsing with particles (von, de) and suffixes (Jr., III), corporate authors. `exportBibtex(items)` → clean BibTeX output with en-dash page ranges and proper name formatting.
+- **RIS parser** (`@citestyle/ris`): `parseRis(str)` → CSL-JSON array. Tagged format with TY/ER delimiters, 30+ type codes, repeatable tags (AU, KW), SP+EP page merging. `exportRis(items)` → standard RIS output.
+- **CLI improvements**: `citestyle check <file>` validates CSL without compiling (reports warnings). `--format cjs` output. Batch mode: `citestyle compile styles/*.csl -o dist/`. Multi-locale: `--locale en-US,fr-FR`. Better error messages with source location.
+- **386 tests total** across 14 test files (80 core, 147 compiler, 38 registry, 66 CSL fixtures, 35 BibTeX, 20 RIS)
+
+### Next: v0.8 — ibid/subsequent + more styles + Scholar integration
 - ibid/subsequent position for note styles
 - 5 more styles (toward 25 total)
 - Scholar integration planning
@@ -208,17 +223,21 @@ Semantic spans encode per-variable CSS classes: `\uE020author\uE021John Smith\uE
 
 ## Testing
 
-Four test layers:
+Six test layers:
 
 1. **Unit tests** (`packages/core/test/`) — Core helpers (names 22, dates 8, text-case+nocase 21, numbers 6, pages 6, HTML 17). 80 tests.
 
-2. **Compiler tests** (`packages/compiler/test/`) — Parser (11), compilation (11), style integration for 20 real styles (114). 136 tests.
+2. **Compiler tests** (`packages/compiler/test/`) — Parser (11), compilation (11), style integration for 20 real styles (114), CLI (11). 147 tests.
 
-3. **CSL test suite fixtures** (`test/csl-suite.test.js`, `test/csl-fixtures/`) — Adapted from `github.com/citation-style-language/test-suite`. Each fixture has MODE, CSL, INPUT, RESULT sections; some also have CITATION-ITEMS (per-cite locator data). The runner compiles the embedded CSL, feeds INPUT, applies bibliography sorting, compares `.text` output against RESULT. 66 fixtures covering: names (particles, initials, hyphenated, form, et-al, substitute, literal, 3-author, sort-order-all, delimiter-precedes-et-al), groups (suppression, delimiter, nesting, all-macros-empty), conditions (type, variable, is-numeric, match all/any/none, multi-type, disambiguate), dates (month, accessed, range, season, short form, localized text, numeric form, date-parts restriction), numbers (ordinal, roman), labels (short, empty, plural, contextual, locator runtime), affixes, decorations (italic, bold, quotes), nocase spans (title, sentence, uppercase, lowercase, multiple spans, no-transform), text-case (title, capitalize-all, sentence preserve uppercase), sort (descending), macros, strip-periods, static text values. Auto-skips deferred features.
+3. **CSL test suite fixtures** (`test/csl-suite.test.js`, `test/csl-fixtures/`) — 66 fixtures adapted from `github.com/citation-style-language/test-suite`.
 
-4. **Registry integration tests** (`packages/registry/test/registry.test.js`) — Registry API with compiled styles (APA, Vancouver, MLA), citation numbering, bibliography sorting, subsequent-author-substitute, year-suffix disambiguation, cite collapsing (numeric + year + year-suffix), name disambiguation (add-givenname, add-names, by-cite). 38 tests.
+4. **Registry integration tests** (`packages/registry/test/registry.test.js`) — 38 tests covering citation numbering, sorting, year-suffix, collapsing, name disambiguation.
 
-Run all tests: `npx vitest run` (320 tests, ~1.2s).
+5. **BibTeX tests** (`packages/bibtex/test/bibtex.test.js`) — LaTeX conversion, parser (article, book, thesis, @string, #concat, accents, particles, suffixes, corporate authors, nested braces), serializer, round-trip. 35 tests.
+
+6. **RIS tests** (`packages/ris/test/ris.test.js`) — Parser (journal, book, thesis, dates, keywords, editors, types), serializer, round-trip. 20 tests.
+
+Run all tests: `npx vitest run` (386 tests, ~1.4s).
 
 ### Known limitations (skip markers in test runner)
 - `position=`, `ibid` — footnote-centric features

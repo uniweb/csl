@@ -4,5 +4,5 @@
  * BibTeX ↔ CSL-JSON conversion.
  */
 
-export { parseBibtex } from './parse.js'
+export { parseBibtex, convertLatex } from './parse.js'
 export { exportBibtex } from './export.js'

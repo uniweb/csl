@@ -846,7 +846,23 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 
 12. **Sentence-case must preserve acronyms context-sensitively.** Blindly lowercasing destroys "DNA" → "dna". But preserving all-caps words when the entire string is already all-caps (like "THE IMPACT OF DNA") would leave everything uppercase. The fix: check if the overall string is all-caps (then no words are special acronyms). For nocase-aware sentence case, only unprotected segments should be checked for all-caps detection — nocase content might have mixed case that makes the string appear mixed when it's actually all-caps in the unprotected parts.
 
-### v0.7 — ibid/subsequent + more styles (next)
+### v0.7 — BibTeX + RIS parsers + CLI ✅
+
+**Completed.** I/O parsers for BibTeX and RIS. CLI improvements. 386 tests total.
+
+- **BibTeX parser**: Full `parseBibtex()` and `exportBibtex()` with LaTeX conversion, @string abbreviations, name parsing (particles, suffixes, corporate), 15 entry types.
+- **RIS parser**: Full `parseRis()` and `exportRis()` with 30+ type codes, repeatable tags, page merging.
+- **CLI**: `citestyle check`, `--format cjs`, batch mode, multi-locale, better errors.
+
+**Design discoveries:**
+
+13. **LaTeX tilde must be handled before whitespace normalization but carefully.** The `~` (non-breaking space) converts to U+00A0. But `\s` in JavaScript regex matches U+00A0, so a `\s+` normalization step would convert it back to a regular space. Fix: use `[\t\n\r ]+` instead of `\s+` for whitespace normalization, preserving non-breaking spaces.
+
+14. **BibTeX name parsing has three formats with different semantics.** "Last, First" (comma-separated, unambiguous), "First Last" (space-separated, requires particle detection), and "Last, Jr., First" (two commas, middle part is suffix). The parser must detect the comma count first, then apply format-specific logic. Particle detection (von, de) works by checking if initial letters are lowercase.
+
+15. **ESM→CJS conversion is a simple post-processing step.** Rather than threading format options through the codegen, the CLI converts `import {...} from` → `const {...} = require()` and `export function` → `function` with `module.exports = {...}` appended. This keeps codegen clean and format-agnostic.
+
+### v0.8 — ibid/subsequent + more styles (next)
 
 **Goals:**
 - ibid/subsequent position for note styles
@@ -898,7 +914,16 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 - **66 CSL fixtures:** Added date-parts restriction, delimiter-precedes-et-al, sentence-case preserve uppercase, all-macros-empty group, locator runtime label, disambiguate condition.
 - **20 styles:** APA, MLA, Chicago Author-Date, Chicago Notes-Bib, IEEE, Vancouver, Harvard, AMA, Nature, Science, ACS, Springer Basic, Elsevier Harvard, ABNT, Cell, APSA, ASA, Annual Reviews, RSC, DGPs.
 
-### Phase 5: Scholar Integration + CLI
+### Phase 4.7: I/O Parsers + CLI ✅
+
+**Completed.** BibTeX and RIS parsers with bidirectional conversion. CLI improvements. 386 tests total.
+
+- **BibTeX parser**: `parseBibtex(str)` → CSL-JSON[]. 15 entry types, LaTeX accent/command → Unicode conversion (100+ mappings), @string abbreviations, # concatenation, braced/quoted strings, month abbreviations. Name parsing: "Last, First", "First Last", "von Last, First", "Last, Jr., First", corporate authors `{WHO}`. `exportBibtex(items)` → clean BibTeX with en-dash page ranges.
+- **RIS parser**: `parseRis(str)` → CSL-JSON[]. Tagged format (TY/ER), 30+ type codes, repeatable tags (AU, KW), SP+EP page merging. `exportRis(items)` → standard RIS.
+- **CLI**: `citestyle check <file>` validates CSL (AST structure, undefined macros). `--format cjs` converts ESM output to CommonJS. Batch mode for multiple files. Multi-locale `--locale en-US,fr-FR`. Better error messages with line/column from XML parse errors.
+- **35 BibTeX tests**, **20 RIS tests**, **11 CLI tests**.
+
+### Phase 5: Scholar Integration
 
 **Not started.** Depends on registry completion.
 
@@ -990,12 +1015,12 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 - [ ] Bundle size: <8KB `@citestyle/core`, <5KB per compiled style, <8KB registry (~20KB total for one style)
 - [ ] Scholar integration working (backward-compatible API)
 - [x] CLI: `csl compile <file>` (basic)
-- [ ] CLI: `csl compile <style>` with locale and format options
+- [x] CLI: `citestyle compile` with locale, format, batch, and check options
 - [ ] TypeScript types for all public APIs
 - [ ] Published to npm under `@citestyle/*` scope
 - [ ] Documentation with examples and migration guide
 - [ ] Web display styles: `compact` and `card` rendering modes
-- [ ] BibTeX and RIS serialization (CSL-JSON → export string) in respective I/O packages
+- [x] BibTeX and RIS parsing + serialization in `@citestyle/bibtex` and `@citestyle/ris`
 
 ### Post-v1
 
@@ -1005,7 +1030,8 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 - [ ] Vite plugin for `.csl` imports
 - [x] Registry: full name disambiguation, cite collapsing (numeric + author-date)
 - [ ] Registry plugins: ibid/subsequent position
-- [ ] RIS and DOI parsers in `@citestyle/ris`, `@citestyle/doi`
+- [x] RIS parser in `@citestyle/ris`
+- [ ] DOI parser/fetcher in `@citestyle/doi`
 - [ ] CrossRef/OpenAlex metadata fetching (auto-populate extended metadata)
 - [ ] Search/filter utilities — fuzzy search over bibliography items by author, title, year, keywords (likely a registry extension or standalone utility)
 - [ ] Sort/group utilities — group bibliography by year, type, or first author; sort by any field (registry already sorts for bibliography, but consumer-facing grouping is different)
