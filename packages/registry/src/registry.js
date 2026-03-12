@@ -75,6 +75,9 @@ export function createRegistry(style, options = {}) {
       return { text: '', html: '' }
     }
 
+    // Ensure year-suffixes are assigned before formatting citations
+    assignYearSuffixes()
+
     const resolvedCites = cites.map(c => {
       const item = c.item || itemsById.get(String(c.id))
       if (!item) {
@@ -99,6 +102,39 @@ export function createRegistry(style, options = {}) {
   }
 
   /**
+   * Assign year-suffix letters (a, b, c, ...) to items that share the same
+   * author+year combination. Sets `item['year-suffix']` on affected items.
+   * Only active when the style has `disambiguate-add-year-suffix="true"`.
+   */
+  function assignYearSuffixes() {
+    const useYearSuffix = style.meta?.disambiguateAddYearSuffix === true
+    if (!useYearSuffix) return
+
+    // Group items by author-year key
+    const groups = new Map()
+    for (const id of itemOrder) {
+      const item = itemsById.get(id)
+      if (!item) continue
+      const key = authorYearKey(item)
+      if (!key) continue
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key).push(item)
+    }
+
+    // Assign suffixes to groups with >1 item
+    for (const [, items] of groups) {
+      if (items.length <= 1) {
+        // Single item — clear any stale suffix
+        delete items[0]['year-suffix']
+        continue
+      }
+      for (let i = 0; i < items.length; i++) {
+        items[i]['year-suffix'] = String.fromCharCode(97 + i) // a, b, c, ...
+      }
+    }
+  }
+
+  /**
    * Get the formatted bibliography.
    * Sorts items using the style's sort comparator, applies subsequent-author-substitute,
    * and returns FormattedEntry[] in bibliography order.
@@ -108,6 +144,9 @@ export function createRegistry(style, options = {}) {
    */
   function getBibliography(ctx = {}) {
     if (!style.bibliography) return []
+
+    // Assign year-suffixes before formatting
+    assignYearSuffixes()
 
     // Collect all items
     let items = itemOrder.map(id => itemsById.get(id)).filter(Boolean)
@@ -226,4 +265,21 @@ function escapeForHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+}
+
+/**
+ * Generate a key combining author names and year for year-suffix detection.
+ * Two items with the same key would render identically in an author-date
+ * citation without disambiguation.
+ */
+function authorYearKey(item) {
+  const names = item.author || item.editor || []
+  if (!names.length) return ''
+  const nameStr = names.map(n => {
+    if (n.literal) return n.literal
+    return (n.family || '') + '|' + (n.given || '')
+  }).join(';')
+  const year = item.issued?.['date-parts']?.[0]?.[0]
+  if (year == null) return ''
+  return nameStr + '/' + year
 }

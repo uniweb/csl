@@ -88,6 +88,17 @@ export function toHtml(str) {
     }
   )
 
+  // Auto-link bare DOIs (e.g., "doi:10.1038/nn.2024" or "doi: 10.1038/nn.2024")
+  html = html.replace(
+    /(?<!href="|">)doi:\s*(10\.[^\s<)\uE000-\uE022]+)/gi,
+    (match, doi) => {
+      const cleaned = doi.replace(/[.,;:]+$/, '')
+      const trailing = doi.slice(cleaned.length)
+      const prefix = match.slice(0, match.indexOf('10.'))
+      return `${prefix}<a class="csl-doi" href="https://doi.org/${cleaned}">${cleaned}</a>${trailing}`
+    }
+  )
+
   // Auto-link remaining URLs (exclude PUA tokens from URL boundaries)
   html = html.replace(
     /(?<!href="|">)https?:\/\/[^\s<)\uE000-\uE022]+/g,

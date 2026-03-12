@@ -786,14 +786,30 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 
 4. **Registry subsequent-author-substitute is a post-processing step.** The bibliography is formatted normally, then consecutive entries with the same author key get their author text replaced. HTML replacement uses the semantic `<span class="csl-author">` tag for precise targeting.
 
-### v0.4 — More styles + nocase spans (next)
+### v0.4 — More styles + year-suffix + test expansion (complete)
+
+**Completed:**
+- 5 more styles (Harvard, AMA, Nature, Science, ACS) — replaced Turabian (dependent style → just Chicago with a different name)
+- Year-suffix assignment in registry — detects author+year collisions, sets `item['year-suffix']` = a/b/c
+- CSL test fixtures expanded from 17 → 45 (names, groups, conditions, dates, numbers, labels, affixes, decorations, macros, sort)
+- `match="none"` condition bug fix — multi-value tests were double-negating
+- `second-field-align="flush"` — proper citation-number spacing in numeric styles
+- `vertical-align="sup"` — superscript citations in HTML for Nature, ACS, etc.
+- Bare DOI auto-linking (`doi:10.xxx`) in `toHtml()` for IEEE, AMA-style formatting
+- Structured output audit: all 10 styles verified for CSS classes, parts, links, DOI linking
+
+**Key design discoveries:**
+5. **Condition match flattening.** CSL match modes (any/all/none) must be applied once across ALL individual checks (from all test attributes), not per-attribute then re-applied in the outer join. The old architecture applied match in `wrapMultiCheck` and again in the outer loop, causing double-negation for `match="none"`.
+
+6. **second-field-align needs PUA awareness.** When adding the space between citation-number and entry body, must check if the first field already ends with whitespace by looking through trailing PUA close tokens (`/\s[\uE000-\uE007\uE020-\uE022]*$/`).
+
+### v0.5 — Nocase spans + more disambiguation (next)
 
 **Goals:**
-- 5 more styles (Harvard, AMA, Turabian, Nature, Science)
 - Nocase span support for text-case transforms
-- Year-suffix assignment in registry
-- Full name disambiguation
-- More CSL test suite fixtures (target: 30-40)
+- Full name disambiguation (add-names, add-givenname)
+- Cite collapsing for numeric styles
+- 5 more styles (ABNT, Springer, Elsevier, APA-CV, Chicago Notes)
 
 ## Implementation Plan
 
@@ -818,16 +834,13 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 - **Registry API**: `createRegistry(style)` → `addItems()`, `getItem()`, `cite()`, `getBibliography()`
 - **parts/links**: Already working from v0.2 codegen; parts extracts raw field values, links extracts DOI/URL/PDF
 
-### Phase 4: Test Suite + Top 10 Styles (in progress)
+### Phase 4: Test Suite + Top 10 Styles ✅
 
-**Test harness done.** Runner at `test/csl-suite.test.js` handles: variant section delimiters, CITATION-ITEMS with locators, HTML stripping from expected output, entity decoding, quote normalization. Auto-skips deferred features.
+**Completed.** 10 styles compile and produce correct output. 45 CSL fixtures passing. 211 tests total.
 
-**17 fixtures passing.** Coverage: names (et-al, inverted, initials, author-count, name-part text-case), text-case (title), groups (suppression, nesting), conditions (type, variable any/all), labels (empty, plural), affixes (intervening empty), dates (month, accessed), decorations (quotes).
-
-**Still needed:**
-- 5 more styles (Harvard, AMA, Turabian, Nature, Science)
-- More fixtures targeting: number formatting, date ranges, sort, substitute chains
-- Nocase span support
+- **Test harness:** Runner handles variant section delimiters, CITATION-ITEMS with locators, HTML stripping, numeric entity decoding (`&#8211;` → `–`), quote normalization. Auto-skips deferred features.
+- **45 fixtures:** names (particles, initials, hyphenated, form, et-al, substitute, literal, 3-author), groups (suppression, delimiter, nesting), conditions (type, variable, is-numeric, match all/any/none), dates (month, accessed, range, season, short form), numbers (ordinal, roman), labels (short, empty, plural), affixes (prefix/suffix), decorations (italic, bold, quotes), text-case, macros, strip-periods, static values, sort keys.
+- **10 styles:** APA, MLA, Chicago Author-Date, IEEE, Vancouver, Harvard, AMA, Nature, Science, ACS.
 
 ### Phase 5: Scholar Integration + CLI
 

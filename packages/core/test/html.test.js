@@ -85,4 +85,24 @@ describe('toHtml', () => {
     expect(toHtml('\uE020title\uE021A < B & C\uE022'))
       .toBe('<span class="csl-title">A &lt; B &amp; C</span>')
   })
+
+  it('auto-links bare DOIs with doi: prefix', () => {
+    const input = '\uE020DOI\uE021doi:10.1038/nn.2024\uE022'
+    const html = toHtml(input)
+    expect(html).toContain('<a class="csl-doi" href="https://doi.org/10.1038/nn.2024">')
+    expect(html).toContain('10.1038/nn.2024</a>')
+  })
+
+  it('auto-links bare DOIs with doi: space prefix', () => {
+    const html = toHtml('doi: 10.1038/nn.2024')
+    expect(html).toContain('<a class="csl-doi" href="https://doi.org/10.1038/nn.2024">')
+  })
+
+  it('does not double-link DOIs', () => {
+    const input = 'https://doi.org/10.1038/nn.2024'
+    const html = toHtml(input)
+    // Should have exactly one <a> tag
+    const matches = html.match(/<a /g)
+    expect(matches).toHaveLength(1)
+  })
 })

@@ -113,6 +113,11 @@ function buildMeta(ast) {
     meta.subsequentAuthorSubstitute = ast.bibliography.subsequentAuthorSubstitute
   }
 
+  // Expose citation disambiguation settings for registry use
+  if (ast.citation?.disambiguateAddYearSuffix) {
+    meta.disambiguateAddYearSuffix = true
+  }
+
   return meta
 }
 
@@ -157,14 +162,26 @@ function generateBibliography(bibNode, ctx) {
   const layout = bibNode.layout
   const body = generateChildren(layout.children, ctx, '  ')
   const delimiter = layout.delimiter ? JSON.stringify(layout.delimiter) : '""'
+  const secondFieldAlign = bibNode.secondFieldAlign
 
   const sortCode = bibNode.sort ? generateSortFunction(bibNode.sort, ctx) : ''
+
+  // When second-field-align is set, the first layout element (typically citation-number)
+  // is separated from the rest by a space in text output
+  let joinCode
+  if (secondFieldAlign && body.parts.length > 1) {
+    joinCode = `  const _first = ${body.parts[0]}
+  const _rest = [${body.parts.slice(1).join(', ')}].filter(v => v !== '').join(${delimiter})
+  const _raw = (_first ? _first + (/\\s[\\uE000-\\uE007\\uE020-\\uE022]*$/.test(_first) ? '' : ' ') : '') + _rest`
+  } else {
+    joinCode = `  const _layout = [${body.parts.join(', ')}].filter(v => v !== '')
+  const _raw = _layout.join(${delimiter})`
+  }
 
   return `export function bibliography(item, ctx = {}) {
   ctx = { ...ctx, _secOpts: BIB_NAME_OPTS }
 ${body.code}
-  const _layout = [${body.parts.join(', ')}].filter(v => v !== '')
-  const _raw = _layout.join(${delimiter})${layout.prefix ? ` + ${JSON.stringify(layout.prefix)}` : ''}${layout.suffix ? ` + ${JSON.stringify(layout.suffix)}` : ''}
+${joinCode}${layout.prefix ? ` + ${JSON.stringify(layout.prefix)}` : ''}${layout.suffix ? ` + ${JSON.stringify(layout.suffix)}` : ''}
   const _norm = _normalizePunctuation(_raw)
   const text = stripFormatting(_norm)
   const html = '<div class="csl-entry">' + toHtml(_norm) + '</div>'
@@ -219,6 +236,7 @@ function generateCitation(citNode, ctx) {
   const layout = citNode.layout
   const body = generateChildren(layout.children, ctx, '    ')
   const citeDelimiter = layout.delimiter ? JSON.stringify(layout.delimiter) : '"; "'
+  const isSuperscript = layout.verticalAlign === 'sup'
 
   return `export function citation(cites, ctx = {}) {
   ctx = { ...ctx, _secOpts: CIT_NAME_OPTS }
@@ -230,7 +248,7 @@ ${body.code}
   })
   const _raw = ${layout.prefix ? JSON.stringify(layout.prefix) + ' + ' : ''}rendered.join(${citeDelimiter})${layout.suffix ? ' + ' + JSON.stringify(layout.suffix) : ''}
   const text = stripFormatting(_raw)
-  const html = '<span class="csl-citation">' + toHtml(_raw) + '</span>'
+  const html = '<span class="csl-citation">${isSuperscript ? '<sup>' : ''}' + toHtml(_raw) + '${isSuperscript ? '</sup>' : ''}</span>'
   return { text, html }
 }
 
@@ -569,57 +587,46 @@ function generateChooseElement(node, ctx, indent) {
 }
 
 function generateConditionTest(cond, ctx) {
-  const tests = cond.tests.map(t => {
+  // Flatten all individual checks from all test attributes, then apply
+  // the match mode once. This avoids double-application of match="none"
+  // when a test attribute has multiple values (e.g., variable="page volume").
+  const allChecks = []
+
+  for (const t of cond.tests) {
     if (t.test === 'type') {
-      const checks = t.values.map(v => `item.type === ${JSON.stringify(v)}`)
-      return wrapMultiCheck(checks, cond.match)
-    }
-    if (t.test === 'variable') {
-      const checks = t.values.map(v => {
+      for (const v of t.values) allChecks.push(`item.type === ${JSON.stringify(v)}`)
+    } else if (t.test === 'variable') {
+      for (const v of t.values) {
         const acc = variableAccessor(v)
-        return `(${acc} != null && ${acc} !== '')`
-      })
-      return wrapMultiCheck(checks, cond.match)
-    }
-    if (t.test === 'is-numeric') {
-      const checks = t.values.map(v => {
+        allChecks.push(`(${acc} != null && ${acc} !== '')`)
+      }
+    } else if (t.test === 'is-numeric') {
+      for (const v of t.values) {
         const acc = variableAccessor(v)
-        return `(${acc} != null && /^\\s*\\d/.test(String(${acc})))`
-      })
-      return wrapMultiCheck(checks, cond.match)
-    }
-    if (t.test === 'disambiguate') {
-      return 'ctx.disambiguate'
-    }
-    if (t.test === 'is-uncertain-date') {
-      const checks = t.values.map(v => {
+        allChecks.push(`(${acc} != null && /^\\s*\\d/.test(String(${acc})))`)
+      }
+    } else if (t.test === 'disambiguate') {
+      allChecks.push('ctx.disambiguate')
+    } else if (t.test === 'is-uncertain-date') {
+      for (const v of t.values) {
         const acc = variableAccessor(v)
-        return `(${acc} && ${acc}.circa)`
-      })
-      return wrapMultiCheck(checks, cond.match)
+        allChecks.push(`(${acc} && ${acc}.circa)`)
+      }
+    } else if (t.test === 'position') {
+      for (const v of t.values) allChecks.push(`ctx.position === ${JSON.stringify(v)}`)
+    } else if (t.test === 'locator') {
+      for (const v of t.values) allChecks.push(`ctx.locator === ${JSON.stringify(v)}`)
     }
-    if (t.test === 'position') {
-      const checks = t.values.map(v => `ctx.position === ${JSON.stringify(v)}`)
-      return wrapMultiCheck(checks, cond.match)
-    }
-    if (t.test === 'locator') {
-      const checks = t.values.map(v => `ctx.locator === ${JSON.stringify(v)}`)
-      return wrapMultiCheck(checks, cond.match)
-    }
-    return 'false'
-  })
+  }
 
-  if (tests.length === 0) return 'true'
-  if (cond.match === 'any') return tests.join(' || ')
-  if (cond.match === 'none') return tests.map(t => `!(${t})`).join(' && ')
-  return tests.join(' && ')
-}
-
-function wrapMultiCheck(checks, match) {
-  if (checks.length === 1) return checks[0]
-  if (match === 'any') return '(' + checks.join(' || ') + ')'
-  if (match === 'none') return '(' + checks.map(c => `!(${c})`).join(' && ') + ')'
-  return '(' + checks.join(' && ') + ')'
+  if (allChecks.length === 0) return 'true'
+  if (allChecks.length === 1) {
+    if (cond.match === 'none') return `!(${allChecks[0]})`
+    return allChecks[0]
+  }
+  if (cond.match === 'any') return '(' + allChecks.join(' || ') + ')'
+  if (cond.match === 'none') return allChecks.map(c => `!(${c})`).join(' && ')
+  return '(' + allChecks.join(' && ') + ')'
 }
 
 // ── Names ────────────────────────────────────────────────────────────────────

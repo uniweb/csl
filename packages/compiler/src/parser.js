@@ -183,6 +183,7 @@ function parseLayout(el) {
     type: 'layout',
     ...parseFormatting(el),
     delimiter: attr(el, 'delimiter'),
+    verticalAlign: attr(el, 'vertical-align'),
     children: parseRenderingElements(el),
   }
 }

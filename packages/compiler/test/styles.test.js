@@ -338,3 +338,238 @@ describe('HTML structured output', () => {
     expect(bib.text).not.toMatch(/[\uE020-\uE022]/)
   })
 })
+
+// ── Harvard (Cite Them Right 12th edition) ──────────────────────────────────
+
+describe('Harvard - Cite Them Right 12th edition', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'harvard.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles Harvard', () => {
+    expect(
+      style.meta.title.includes('Harvard') || style.meta.title.includes('Cite Them Right')
+    ).toBe(true)
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toBe(
+      'Smith, J. A. and Jones, B. C. (2024) \u201cNeural correlates of consciousness\u201d, Nature Neuroscience, 27(3), pp. 45-67. Available at: https://doi.org/10.1038/nn.2024.'
+    )
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toBe(
+      'Norman, D. A. (2013) The design of everyday things. 2nd ed. New York: Basic Books.'
+    )
+  })
+
+  it('generates author-date citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('(Smith and Jones, 2024)')
+  })
+
+  it('renders italic container title and semantic spans in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<i>Nature Neuroscience</i>')
+    expect(bib.html).toMatch(/^<div class="csl-entry">/)
+    expect(bib.html).toContain('class="csl-container-title"')
+  })
+
+  it('auto-links DOI in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<a class="csl-doi" href="https://doi.org/10.1038/nn.2024">')
+  })
+})
+
+// ── AMA (American Medical Association 11th edition) ─────────────────────────
+
+describe('AMA 11th edition', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'ama.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles AMA', () => {
+    expect(style.meta.title).toContain('AMA')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toBe(
+      '1. Smith JA, Jones BC. Neural correlates of consciousness. Nature Neuroscience. 2024;27(3):45\u201367. doi:10.1038/nn.2024'
+    )
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman DA')
+    expect(bib.text).toContain('Design of Everyday Things')
+    expect(bib.text).toContain('2nd ed')
+    expect(bib.text).toContain('Basic Books')
+    expect(bib.text).toContain('2013')
+  })
+
+  it('uses no-space initials (JA not J. A.)', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toContain('Smith JA')
+    expect(bib.text).toContain('Jones BC')
+    expect(bib.text).not.toContain('J. A.')
+  })
+
+  it('generates numeric citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('1')
+  })
+
+  it('renders italic container title in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<i>')
+    expect(bib.html).toContain('Nature Neuroscience')
+    expect(bib.html).toContain('class="csl-container-title"')
+  })
+})
+
+// ── Nature ──────────────────────────────────────────────────────────────────
+
+describe('Nature', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'nature.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles Nature', () => {
+    expect(style.meta.title).toBe('Nature')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toBe(
+      '1. Smith, J. A. & Jones, B. C. Neural correlates of consciousness. Nature Neuroscience 27, 45-67 (2024).'
+    )
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman, D. A.')
+    expect(bib.text).toContain('Basic Books')
+    expect(bib.text).toContain('New York')
+    expect(bib.text).toContain('2013')
+  })
+
+  it('generates numeric citations (superscript in HTML)', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('1')
+    expect(cit.html).toMatch(/<sup>/)
+  })
+
+  it('renders italic container title and semantic spans in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<i>')
+    expect(bib.html).toContain('Nature Neuroscience')
+    expect(bib.html).toContain('class="csl-entry"')
+  })
+})
+
+// ── Science ─────────────────────────────────────────────────────────────────
+
+describe('Science', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'science.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles Science', () => {
+    expect(style.meta.title).toBe('Science')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toBe(
+      '1. J. A. Smith, B. C. Jones, Neural correlates of consciousness. Nature Neuroscience 27, 45-67 (2024).'
+    )
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('D. A. Norman')
+    expect(bib.text).toContain('Basic Books')
+    expect(bib.text).toContain('New York')
+    expect(bib.text).toContain('ed. 2')
+    expect(bib.text).toContain('2013')
+  })
+
+  it('generates numeric citations in parens', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('(1)')
+  })
+
+  it('renders italic container title in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<i>')
+    expect(bib.html).toContain('Nature Neuroscience')
+    expect(bib.html).toMatch(/^<div class="csl-entry">/)
+  })
+})
+
+// ── ACS (American Chemical Society) ─────────────────────────────────────────
+
+describe('ACS', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'acs.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles ACS', () => {
+    expect(style.meta.title).toContain('ACS')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toContain('Smith, J. A.; Jones, B. C.')
+    expect(bib.text).toContain('Neural Correlates of Consciousness')
+    expect(bib.text).toContain('Nature Neuroscience 2024')
+    expect(bib.text).toContain('27 (3)')
+    expect(bib.text).toContain('45\u201367')
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman, D. A.')
+    expect(bib.text).toContain('Basic Books')
+    expect(bib.text).toContain('New York')
+    expect(bib.text).toContain('2013')
+  })
+
+  it('generates numeric superscript citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('1')
+    expect(cit.html).toMatch(/<sup>/)
+  })
+
+  it('renders italic container title and semantic spans in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<i>')
+    expect(bib.html).toContain('Nature Neuroscience')
+    expect(bib.html).toContain('class="csl-container-title"')
+  })
+
+  it('uses semicolon-separated author names', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toMatch(/Smith, J\. A\.; Jones, B\. C\./)
+  })
+})

@@ -1,0 +1,64 @@
+>>===== MODE =====>>
+bibliography
+<<===== MODE =====<<
+
+
+>>===== RESULT =====>>
+<div class="csl-bib-body">
+  <div class="csl-entry">3rd edition</div>
+  <div class="csl-entry">revised edition</div>
+</div>
+<<===== RESULT =====<<
+
+
+>>===== CSL =====>>
+<style
+      xmlns="http://purl.org/net/xbiblio/csl"
+      class="in-text"
+      version="1.0">
+  <info>
+    <id />
+    <title />
+    <updated>2024-01-01T00:00:00+00:00</updated>
+  </info>
+  <bibliography>
+    <layout>
+      <choose>
+        <if is-numeric="edition">
+          <group delimiter=" ">
+            <number variable="edition" form="ordinal"/>
+            <text value="edition"/>
+          </group>
+        </if>
+        <else>
+          <group delimiter=" ">
+            <text variable="edition"/>
+            <text value="edition"/>
+          </group>
+        </else>
+      </choose>
+    </layout>
+  </bibliography>
+</style>
+<<===== CSL =====<<
+
+
+>>===== INPUT =====>>
+[
+    {
+        "id": "ITEM-1",
+        "edition": "3",
+        "type": "book"
+    },
+    {
+        "id": "ITEM-2",
+        "edition": "revised",
+        "type": "book"
+    }
+]
+<<===== INPUT =====<<
+
+
+>>===== VERSION =====>>
+1.0
+<<===== VERSION =====<<

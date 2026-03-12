@@ -113,6 +113,7 @@ async function runFixture(fixturePath) {
     .replace(/&#38;/g, '&')      // Decode HTML entities
     .replace(/&#60;/g, '<')
     .replace(/&#62;/g, '>')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code))) // Decode numeric entities
     .replace(/\n+/g, '\n')       // Collapse multiple newlines
     .replace(/^\n|\n$/g, '')     // Strip leading/trailing newlines
     .split('\n').map(l => l.trim()).join('\n')  // Strip per-line whitespace from HTML indentation

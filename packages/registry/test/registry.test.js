@@ -183,3 +183,78 @@ describe('subsequent-author-substitute', () => {
     }
   })
 })
+
+describe('year-suffix disambiguation', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'apa.csl'), 'utf-8')
+    style = await compileStyle(csl)
+  })
+
+  it('assigns year-suffix when two items share author+year', () => {
+    // Use fresh copies to avoid cross-test pollution
+    const item1 = { ...smith2024, id: 'ys-smith2024a' }
+    const item2 = { ...smith2024b, id: 'ys-smith2024b' }
+    const reg = createRegistry(style)
+    reg.addItems([item1, item2])
+
+    const bib = reg.getBibliography()
+    // APA year-suffix: Smith (2024a), Smith (2024b)
+    expect(item1['year-suffix']).toBe('a')
+    expect(item2['year-suffix']).toBe('b')
+  })
+
+  it('includes year-suffix in bibliography text', () => {
+    const item1 = { ...smith2024, id: 'ys2-smith2024a' }
+    const item2 = { ...smith2024b, id: 'ys2-smith2024b' }
+    const reg = createRegistry(style)
+    reg.addItems([item1, item2])
+
+    const bib = reg.getBibliography()
+    // Bibliography entries should include the suffix
+    const texts = bib.map(e => e.text)
+    expect(texts.some(t => t.includes('2024a'))).toBe(true)
+    expect(texts.some(t => t.includes('2024b'))).toBe(true)
+  })
+
+  it('includes year-suffix in citations', () => {
+    const item1 = { ...smith2024, id: 'ys3-smith2024a' }
+    const item2 = { ...smith2024b, id: 'ys3-smith2024b' }
+    const reg = createRegistry(style)
+    reg.addItems([item1, item2])
+
+    // Need to trigger year-suffix assignment
+    reg.getBibliography()
+
+    const cit1 = reg.cite([{ id: 'ys3-smith2024a' }])
+    const cit2 = reg.cite([{ id: 'ys3-smith2024b' }])
+    expect(cit1.text).toContain('2024a')
+    expect(cit2.text).toContain('2024b')
+  })
+
+  it('does not assign suffix when items have different years', () => {
+    const item1 = { ...smith2024, id: 'ys4-smith2024' }
+    const item2 = { ...jones2023, id: 'ys4-jones2023' }
+    const reg = createRegistry(style)
+    reg.addItems([item1, item2])
+
+    reg.getBibliography()
+    expect(item1['year-suffix']).toBeUndefined()
+    expect(item2['year-suffix']).toBeUndefined()
+  })
+
+  it('does not assign suffix when items have different authors', () => {
+    const item1 = { ...smith2024, id: 'ys5-smith2024' }
+    const item2 = {
+      ...smith2024b, id: 'ys5-other2024',
+      author: [{ family: 'Other', given: 'Person' }],
+    }
+    const reg = createRegistry(style)
+    reg.addItems([item1, item2])
+
+    reg.getBibliography()
+    expect(item1['year-suffix']).toBeUndefined()
+    expect(item2['year-suffix']).toBeUndefined()
+  })
+})

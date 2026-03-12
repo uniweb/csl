@@ -90,11 +90,21 @@ Parser → codegen → compiled APA output. Core helpers for names, dates, text-
 - **Citation non-mutation**: `cite()` no longer mutates original item objects when locators are present
 - **147 tests total** across 11 test files (22 name, 14 HTML, 12 registry, 30 style, 17 CSL fixtures)
 
-### Next: v0.4 — More styles + nocase spans
-- 5 more styles (Harvard, AMA, Turabian, Nature, Science)
+### v0.4 — More styles + year-suffix + test expansion (complete)
+- **10 styles compile correctly**: Added Harvard (Cite Them Right), AMA 11th, Nature, Science, ACS 2022 to existing 5 (APA, MLA, Chicago, IEEE, Vancouver)
+- **Year-suffix disambiguation**: Registry detects author+year collisions and assigns a/b/c suffixes via `item['year-suffix']`. Compiled styles read this variable. Triggered by `disambiguate-add-year-suffix="true"` exposed in meta.
+- **match="none" condition fix**: Multi-value test attributes (e.g., `variable="page volume"`) no longer double-negate — flattened all checks before applying match mode once.
+- **second-field-align**: Bibliography `second-field-align="flush"` now separates citation number from entry body with proper spacing. PUA-aware to avoid double spaces when suffix already includes whitespace.
+- **vertical-align="sup"**: Citation layouts with `vertical-align="sup"` now wrap output in `<sup>` tags in HTML.
+- **Bare DOI auto-linking**: `toHtml()` now links `doi:10.xxx` and `doi: 10.xxx` patterns (not just `https://doi.org/` URLs). Covers IEEE, AMA, and similar styles.
+- **Structured output audit**: All 10 styles verified for consistent semantic CSS classes, clean text output (no PUA leakage), parts/links extraction, and DOI auto-linking.
+- **211 tests total** across 11 test files (69 core, 80 compiler, 17 registry, 45 CSL fixtures)
+
+### Next: v0.5 — Nocase spans + more disambiguation
 - Nocase span support for text-case transforms
-- Year-suffix assignment in registry
-- Full name disambiguation
+- Full name disambiguation (add-names, add-givenname)
+- Cite collapsing for numeric styles
+- 5 more styles (ABNT, Springer, Elsevier, APA-CV, Chicago Notes)
 
 ## Technical Decisions
 
@@ -166,7 +176,7 @@ Compiled styles use Unicode Private Use Area characters (U+E000-E007) as formatt
 
 Semantic spans encode per-variable CSS classes: `\uE020author\uE021John Smith\uE022` → `<span class="csl-author">John Smith</span>`. This enables CSS theming of individual fields without premature HTML generation.
 
-- `toHtml(str)` — converts tokens to HTML tags, also auto-links DOIs and URLs. **Processing order matters**: escape HTML → auto-link DOIs → auto-link URLs → convert formatting tokens → convert semantic tokens.
+- `toHtml(str)` — converts tokens to HTML tags, also auto-links DOIs and URLs. **Processing order matters**: escape HTML → auto-link DOI URLs → auto-link bare DOIs (`doi:10.xxx`) → auto-link URLs → convert formatting tokens → convert semantic tokens.
 - `stripFormatting(str)` — removes all PUA tokens (formatting + semantic) for clean plain text
 - Punctuation normalization (`_normalizePunctuation`) is PUA-aware — won't break on tokens between dots. The F pattern includes ranges `\uE000-\uE007` and `\uE020-\uE022`.
 
@@ -176,20 +186,20 @@ Semantic spans encode per-variable CSS classes: `\uE020author\uE021John Smith\uE
 
 ## Testing
 
-Three test layers:
+Four test layers:
 
-1. **Unit tests** (`packages/core/test/`, `packages/compiler/test/`) — Core helpers (names, dates, text-case, numbers, pages, HTML) and compiler (parser, compilation, 5 real styles). Registry tests. 108 tests.
+1. **Unit tests** (`packages/core/test/`) — Core helpers (names 22, dates 8, text-case 10, numbers 6, pages 6, HTML 17). 69 tests.
 
-2. **CSL test suite fixtures** (`test/csl-suite.test.js`, `test/csl-fixtures/`) — Adapted from `github.com/citation-style-language/test-suite`. Each fixture has MODE, CSL, INPUT, RESULT sections; some also have CITATION-ITEMS (per-cite locator data). The runner compiles the embedded CSL, feeds INPUT, compares `.text` output against RESULT. 17 fixtures passing. Auto-skips fixtures using deferred features (ibid, disambiguation, collapsing) or nocase spans.
+2. **Compiler tests** (`packages/compiler/test/`) — Parser (11), compilation (11), style integration for 10 real styles (58). 80 tests.
 
-3. **Style integration tests** (`packages/compiler/test/styles.test.js`) — Compile real .csl files (APA, MLA, Chicago, IEEE, Vancouver), format sample items, verify text and HTML output including semantic CSS classes. 30 tests.
+3. **CSL test suite fixtures** (`test/csl-suite.test.js`, `test/csl-fixtures/`) — Adapted from `github.com/citation-style-language/test-suite`. Each fixture has MODE, CSL, INPUT, RESULT sections; some also have CITATION-ITEMS (per-cite locator data). The runner compiles the embedded CSL, feeds INPUT, compares `.text` output against RESULT. 45 fixtures covering: names (particles, initials, hyphenated, form, et-al, substitute, literal, 3-author), groups (suppression, delimiter, nesting), conditions (type, variable, is-numeric, match all/any/none), dates (month, accessed, range, season, short form), numbers (ordinal, roman), labels (short, empty, plural), affixes, decorations (italic, bold, quotes), text-case, macros, strip-periods, static text values, sort keys. Auto-skips deferred features.
 
-4. **Registry integration tests** (`packages/registry/test/registry.test.js`) — Registry API with compiled styles (APA, IEEE, MLA), citation numbering, bibliography sorting, subsequent-author-substitute. 12 tests.
+4. **Registry integration tests** (`packages/registry/test/registry.test.js`) — Registry API with compiled styles (APA, IEEE, MLA), citation numbering, bibliography sorting, subsequent-author-substitute, year-suffix disambiguation. 17 tests.
 
-Run all tests: `npx vitest run` (147 tests, ~700ms).
+Run all tests: `npx vitest run` (211 tests, ~800ms).
 
 ### Known limitations (skip markers in test runner)
 - `position=`, `ibid` — footnote-centric features
-- `disambiguate-` — name/cite disambiguation
+- `disambiguate-add-names`, `disambiguate-add-givenname` — name disambiguation (year-suffix IS supported)
 - `collapse=` — cite collapsing
 - `<span class="nocase">` — case-protection in variable values
