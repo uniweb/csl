@@ -140,7 +140,8 @@ function formatSingleName(name, opts) {
   let given = name.given || ''
 
   // Initialize given names (e.g., "John Andrew" → "J. A.")
-  if (initialize && initializeWith && given) {
+  // initializeWith can be "" (empty string) for styles like Vancouver → "JA"
+  if (initialize && initializeWith != null && given) {
     given = initializeGiven(given, initializeWith)
   }
 
@@ -180,6 +181,9 @@ function buildFamilyWithParticles(name) {
  */
 function initializeGiven(given, initWith) {
   const trimmedInit = initWith.trimEnd()
+  // When initializeWith is empty (""), join initials without space (e.g., "JA")
+  // When it has content (". "), join with space (e.g., "J. A.")
+  const joinWith = initWith === '' ? '' : ' '
 
   return given
     .split(/\s+/)
@@ -194,5 +198,5 @@ function initializeGiven(given, initWith) {
       }
       return part.charAt(0).toUpperCase() + trimmedInit
     })
-    .join(' ')
+    .join(joinWith)
 }

@@ -201,8 +201,8 @@ function localName(el) {
 }
 
 function attr(el, name) {
-  const val = el.getAttribute?.(name)
-  return val || null
+  if (!el.hasAttribute?.(name)) return null
+  return el.getAttribute(name)
 }
 
 function textContent(el) {

@@ -418,7 +418,7 @@ function parseNameNode(el) {
   const node = {
     type: 'name',
     and: attr(el, 'and'),
-    delimiter: attr(el, 'delimiter') || ', ',
+    delimiter: attr(el, 'delimiter') ?? ', ',
     delimiterPrecedesEtAl: attr(el, 'delimiter-precedes-et-al'),
     delimiterPrecedesLast: attr(el, 'delimiter-precedes-last'),
     etAlMin: attrInt(el, 'et-al-min'),
@@ -430,7 +430,7 @@ function parseNameNode(el) {
     initialize: attr(el, 'initialize') !== 'false',
     initializeWith: attr(el, 'initialize-with'),
     nameAsSortOrder: attr(el, 'name-as-sort-order'),
-    sortSeparator: attr(el, 'sort-separator') || ', ',
+    sortSeparator: attr(el, 'sort-separator') ?? ', ',
     ...parseFormatting(el),
     nameParts: [],
   }
@@ -563,8 +563,8 @@ function localName(el) {
 }
 
 function attr(el, name) {
-  const val = el.getAttribute?.(name)
-  return val || null
+  if (!el.hasAttribute?.(name)) return null
+  return el.getAttribute(name)
 }
 
 function attrInt(el, name) {

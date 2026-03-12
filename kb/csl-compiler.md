@@ -725,108 +725,98 @@ CitationProvider({ references, style: compiledApa })
 
 Scholar becomes **the React integration layer** on top of `@citestyle/*` packages — not a formatting engine itself.
 
+## Implementation Status
+
+### v0.1 — Core pipeline ✅
+
+Parser + codegen + core helpers + APA compilation. 69 tests.
+
+**What was built:**
+- CSL XML parser (`@xmldom/xmldom` DOM → CSL AST)
+- Code generator (AST → JavaScript module)
+- Core helpers: `formatNames`, `formatDate`, `titleCase`, `sentenceCase`, `capitalize`, `ordinal`, `roman`, `pageRange`, `escapeHtml`
+- Locale resolution with en-US fallback
+- CLI: `csl compile <file>`
+- APA 7th compiles and produces correct output
+
+### v0.2 — Multi-style + structured output ✅
+
+5 styles + HTML output + CSL test suite runner. 113 tests.
+
+**What was built:**
+- **5 real styles compile correctly**: APA 7th, MLA 9th, Chicago Author-Date 18th, IEEE, Vancouver (Elsevier)
+- **Structured output**: `{ text, html }` — text is plain, html has semantic CSS classes + auto-linked DOIs/URLs
+- **Formatting token system**: PUA characters U+E000-E007 for italic/bold/small-caps/underline, converted at final output
+- **CSL test suite runner**: compiles embedded CSL from fixtures, compares against reference output. 16 fixtures passing.
+- **Locator support**: `<text variable="locator"/>` and `<label variable="locator"/>` with dynamic term lookup + plural detection
+- **Section-level name options**: Runtime `_nameConfig()` merges global → section → element options correctly
+- **`page-first` derived variable**: Extracts first page from ranges
+- **Title case improvements**: Preserves abbreviations (all-caps words in mixed-case text, internal capitals like "OpenAI")
+
+**Key design discoveries:**
+
+1. **Name options must resolve at runtime, not compile time.** Macros are shared between citation and bibliography, but each section can have different et-al settings. The original design baked name config at compile time; v0.2 refactored to runtime merging via `_nameConfig(ctx, elementOpts)`.
+
+2. **Empty-string attributes are meaningful.** `initialize-with=""` means "initialize with nothing" (Vancouver: "Smith JA"), not "don't initialize". The parser must use `hasAttribute()` checks, and option merging must use `??` (not `||`) to preserve falsy values.
+
+3. **Formatting tokens simplify the pipeline.** Instead of threading HTML/text output modes through every rendering function, embed neutral PUA markers and convert at the final stage. This keeps the rendering pipeline clean and makes punctuation normalization PUA-aware.
+
+4. **Label variable="locator" is special.** Unlike other labels where the term name is derived from the variable name (page → "page", volume → "volume"), the locator label term comes from the cite's label property (page, chapter, verse, etc.) — a runtime value, not a compile-time constant.
+
+### v0.3 — Registry + expanded coverage (next)
+
+**Goals:**
+- Citation registry: year-suffix assignment, citation numbering, bibliography sorting
+- 5 more styles: Harvard, AMA, Turabian, Nature, Science
+- `parts` and `links` in FormattedEntry
+- Nocase span support for text-case transforms
+- `name-part` text-case formatting (e.g., uppercase family names)
+- `delimiter-precedes-et-al` and `delimiter-precedes-last` advanced modes (`after-inverted-name`)
+- More CSL test suite fixtures (target: 30-40)
+
 ## Implementation Plan
 
-### Phase 1: CSL Parser + Core Codegen (weeks 1-3)
+### Phase 1: CSL Parser + Core Codegen ✅
 
-**Goal:** Parse a `.csl` file into an AST, compile the simplest constructs.
+**Completed.** Parser, AST, macro resolution, core codegen, APA compilation.
 
-1. **CSL XML parser** — Use a proper XML parser (`fast-xml-parser` or Node's built-in `DOMParser` via `@xmldom/xmldom`). The compiler is a build-time tool — parser weight is irrelevant. Don't attempt regex-based XML parsing; CSL uses namespaces, nested elements, and attributes that make regex fragile. Parse to a generic DOM, then walk it into the CSL-specific AST.
+### Phase 2: Names + Dates + Locale + @citestyle/core ✅
 
-2. **AST definition** — TypeScript interfaces for every CSL node type (Style, Macro, Layout, Text, Names, Date, Choose, Group, Number, Label, Sort).
+**Completed.** Full name formatting engine, date formatting, locale resolution, number formatting. All core helpers extracted to `@citestyle/core`. Five styles compile correctly.
 
-3. **Macro resolver** — Inline macro bodies at call sites. Detect cycles. Shared macros emit named functions; single-use macros inline directly.
+**Lessons learned:**
+- Real styles exercise many more edge cases than test-driven development alone. Chicago Author-Date alone exposed section-level name option cascading, complex macro chains, and conditional nesting.
+- IEEE and Vancouver (numeric styles) require `citation-number` variable support and different name formatting (no-sort, initials-only).
+- The `initialize-with=""` (empty string) semantics were a subtle but critical fix — Vancouver names went from "Smith J A" to "Smith JA".
 
-4. **Core codegen** — `cs:text` (variable, value, term), `cs:group` (with suppression), `cs:choose` (conditionals), basic `cs:names` (without full et-al).
+### Phase 3: Structured Output + Registry (in progress)
 
-5. **First compiled style** — Take `apa.csl`, compile it, compare output against known-good APA references. Manual verification at this stage.
+**HTML output done.** Formatting tokens (PUA U+E000-E007) → `toHtml()` conversion with auto-linked DOIs/URLs. CSS classes: `csl-entry`, `csl-citation`, `csl-doi`, `csl-url`, `csl-sc`, `csl-ul`.
 
-**Deliverable:** `csl compile apa.csl -o apa.js` produces a module that formats basic article/book entries.
+**Still needed:**
+- `parts` extraction (decomposed fields for custom layouts)
+- `links` extraction (DOI, URL, PDF)
+- Citation registry (year-suffix, numbering, sorting)
+- Locator support in more styles
 
-### Phase 2: Names + Dates + Locale + @citestyle/core (weeks 4-5)
+### Phase 4: Test Suite + Top 10 Styles (in progress)
 
-**Goal:** Complete the two most complex rendering elements and extract shared helpers.
+**Test harness done.** Runner at `test/csl-suite.test.js` handles: variant section delimiters, CITATION-ITEMS with locators, HTML stripping from expected output, entity decoding, quote normalization. Auto-skips deferred features.
 
-1. **`@citestyle/core` package** — Extract shared runtime helpers: `formatNames()`, `formatDate()`, `titleCase()`/`sentenceCase()`, `ordinal()`/`roman()`, `pageRange()`, `escapeHtml()`. These are used by all compiled styles and should be stable before compiling multiple styles.
+**16 fixtures passing.** Coverage: names (et-al, inverted, initials, author-count), text-case (title), groups (suppression, nesting), conditions (type, variable any/all), labels (empty, plural), affixes (intervening empty), dates (month, accessed), decorations (quotes).
 
-2. **Name formatting engine** (in `@citestyle/core`) — Handle all `cs:name` attributes: `et-al-min/use-first`, `name-as-sort-order`, `delimiter-precedes-last`, `initialize-with`, name parts (given/family with formatting), substitute fallbacks, name particles (`von`, `de la`).
+**Still needed:**
+- 5 more styles (Harvard, AMA, Turabian, Nature, Science)
+- More fixtures targeting: number formatting, date ranges, sort, substitute chains
+- Nocase span support, name-part formatting
 
-3. **Date formatting engine** (in `@citestyle/core`) — Localized and non-localized date forms, date-part formatting (ordinal days, abbreviated months), date ranges with `range-delimiter`, seasons, approximate dates.
+### Phase 5: Scholar Integration + CLI
 
-4. **Locale resolution** (in compiler) — Merge style-level `cs:locale` overrides with locale files. Inline resolved terms as string constants. Support locale fallback chain (e.g., `de-AT` → `de` → `en-US`).
+**Not started.** Depends on registry completion.
 
-5. **Number formatting** (in `@citestyle/core`) — Numeric, ordinal, long-ordinal, roman forms.
+### Phase 6: Documentation + Release
 
-6. **Update codegen** — Compiled styles now import from `@citestyle/core` instead of inlining helper logic.
-
-**Deliverable:** `@citestyle/core` package with full test coverage. Compiled APA, MLA, Chicago, IEEE produce correct output for all common entry types (article, book, chapter, conference, thesis, webpage).
-
-### Phase 3: Structured Output + Registry (weeks 6-7)
-
-**Goal:** The novel web-native features.
-
-1. **HTML output generation** — Wrap formatted parts in `<span>` elements with CSS classes. Convert `font-style="italic"` to `<i>`, `font-weight="bold"` to `<b>`, etc. Auto-link DOIs, URLs.
-
-2. **Parts extraction** — Alongside HTML, produce decomposed `parts` object from the rendering pipeline. Each formatting function returns both rendered and structured forms.
-
-3. **Citation registry** — Year-suffix assignment, citation number tracking, bibliography sorting (using compiled comparator), subsequent-author-substitute.
-
-4. **Inline citation formatting** — Author-date styles: `(Smith, 2024)`, `(Smith, 2024; Jones, 2023)`. Numeric styles: `[1]`, `[1, 3]`. Locator support: `(Smith, 2024, p. 42)`.
-
-**Deliverable:** Full `FormattedEntry` output (html + parts + links + text). Registry handles year suffixes and bibliography sorting.
-
-### Phase 4: Test Suite + Top 10 Styles (weeks 8-9)
-
-**Goal:** Validated compliance for the styles that matter most.
-
-1. **Test harness** — Adapt the CSL test suite (processor-tests) to run against compiled styles. The test format is documented: MODE, CSL, INPUT, RESULT sections. Write a runner that compiles the embedded CSL, feeds INPUT, compares `.text` output against RESULT.
-
-2. **Test triage** — Categorize the ~654 test fixtures:
-   - Tests for supported features → must pass
-   - Tests for deferred features (ibid, near-note, full disambiguation) → skip with marker
-   - Tests for CSL-M → skip entirely
-
-3. **Style validation** — Compile and verify the 10 most-used styles:
-   - APA 7th, MLA 9th, Chicago (author-date), IEEE, Vancouver
-   - Harvard (Cite Them Right), AMA, Turabian, Nature, Science
-
-4. **Edge-case fixes** — The test suite will reveal gaps. Expect to iterate on: name particle handling (`von`, `de la`), page-range formatting, ordinal localization, group suppression edge cases.
-
-**Deliverable:** Published compliance matrix. Test suite integrated into CI.
-
-### Phase 5: Scholar Integration + CLI (weeks 10-11)
-
-**Goal:** Working integration in Uniweb, developer experience.
-
-1. **Scholar migration** — Replace hardcoded formatters with compiled styles. CitationProvider accepts compiled style modules. Bibliography renders structured HTML. Backward-compatible: `style="apa"` still works (resolves to built-in compiled style).
-
-2. **CLI integration** — `csl compile <style> [options]` command:
-   - `--locale en-US` — Target locale (default: style's default-locale)
-   - `--format esm|cjs` — Output module format
-   - `--minify` — Minify output
-   - `-o <file>` — Output path
-
-3. **Vite plugin** (optional) — Compile `.csl` files on import:
-   ```javascript
-   import * as apa from './styles/apa.csl'
-   ```
-   Useful for foundations that bundle custom styles.
-
-4. **Pre-compiled styles package** — `@citestyle/styles` with top 20 styles pre-compiled for immediate use.
-
-**Deliverable:** Scholar working with compiled CSL styles. CLI and optional Vite plugin available.
-
-### Phase 6: Documentation + Release (week 12)
-
-**Goal:** Open-source release with proper positioning.
-
-1. **README + website** — Clear value proposition, comparison with citeproc-js, quick-start guide, migration guide.
-
-2. **API documentation** — TypeScript-first. Compiled style interface, registry API, output types.
-
-3. **Examples** — Standalone HTML, React, Uniweb Scholar integration, custom style compilation.
-
-4. **Contributing guide** — How to add CSL features, how the test suite works, architecture overview.
+**Not started.**
 
 ## Key Design Decisions
 
@@ -903,11 +893,15 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 
 ### v1.0 release
 
-- [ ] 10+ popular styles compile correctly (APA, MLA, Chicago, IEEE, Vancouver, Harvard, AMA, Turabian, Nature, Science)
-- [ ] Structured output (HTML + parts + links + text) for all compiled styles
-- [ ] CSL test suite: 80%+ pass rate on supported-feature tests
+- [x] 5 popular styles compile correctly (APA, MLA, Chicago, IEEE, Vancouver)
+- [ ] 10+ popular styles compile correctly (+ Harvard, AMA, Turabian, Nature, Science)
+- [x] HTML + text structured output for all compiled styles
+- [ ] Full structured output (HTML + parts + links + text) for all compiled styles
+- [x] CSL test suite runner with 16 passing fixtures
+- [ ] CSL test suite: 80%+ pass rate on supported-feature tests (target: 50+ fixtures)
 - [ ] Bundle size: <8KB `@citestyle/core`, <5KB per compiled style, <8KB registry (~20KB total for one style)
 - [ ] Scholar integration working (backward-compatible API)
+- [x] CLI: `csl compile <file>` (basic)
 - [ ] CLI: `csl compile <style>` with locale and format options
 - [ ] TypeScript types for all public APIs
 - [ ] Published to npm under `@citestyle/*` scope
@@ -1055,61 +1049,55 @@ interface CslDate {
 </layout>
 ```
 
-### Compiled output (conceptual)
+### Compiled output (actual pattern)
 
 ```javascript
 // Generated by @citestyle/compiler from apa.csl
-import { formatNames, formatDate, escapeHtml } from '@citestyle/core'
+import { formatNames, formatDate, escapeHtml, stripFormatting, toHtml,
+         titleCase, sentenceCase, capitalize, ordinal, roman, pageRange } from '@citestyle/core'
 
-export function bibliography(item, ctx) {
-  const parts = {}
-  const fragments = []
+const T = { "et-al": "et al.", "and": "and", "page": { single: "page", multiple: "pages" }, /* ... */ }
+const MONTHS = { /* locale month names */ }
+const NAME_OPTS = { etAlMin: 20, etAlUseFirst: 19, and: 'symbol', /* ... */ }
 
-  // Group: author + date (suppressed if both empty)
-  const group = []
+// Runtime name config merging: global → section → element
+function _nameConfig(ctx, el) {
+  const c = Object.assign({}, NAME_OPTS, ctx._secOpts || {}, el)
+  if (c.and === 'text') c.andTerm = T['and'] || 'and'
+  else if (c.and === 'symbol') c.andTerm = '&'
+  if (!c.etAlTerm) c.etAlTerm = T['et-al'] || 'et al.'
+  return c
+}
 
-  // Names: author → editor → title (substitute chain)
-  let names = item.author?.length
-    ? formatNames(item.author, {
-        sortOrder: 'all', and: '&', delimiter: ', ',
-        delimiterPrecedesLast: 'always', initializeWith: '. ',
-        etAl: { min: 7, useFirst: 6, term: 'et al.', style: 'italic' }
-      })
-    : null
-  if (!names && item.editor?.length) {
-    names = formatNames(item.editor, { /* same config */ })
-  }
-  if (!names && item.title) {
-    names = escapeHtml(item.title)
-  }
-  if (names) {
-    parts.authors = item.author || item.editor || []
-    group.push(`<span class="csl-author">${names}</span>`)
-  }
+// Shared macros — called by both citation() and bibliography()
+function macro_author(item, ctx) {
+  // Names with substitute chain: author → editor → title
+  let _v1 = item.author?.length ? formatNames(item.author, _nameConfig(ctx, {})) : ''
+  if (!_v1) _v1 = item.editor?.length ? formatNames(item.editor, _nameConfig(ctx, {})) : ''
+  if (!_v1) _v1 = item.title || ''
+  return _v1
+}
 
-  // Date: issued
-  if (item.issued?.['date-parts']?.[0]) {
-    const year = formatDate(item.issued, { parts: ['year'] })
-    parts.year = year
-    group.push(`<span class="csl-year">(${escapeHtml(year)})</span>`)
-  }
+const BIB_NAME_OPTS = { etAlMin: 20, etAlUseFirst: 19, /* bibliography-specific */ }
 
-  // Group suppression: only emit if at least one variable was non-empty
-  if (group.length) fragments.push(group.join(' '))
-
-  // Title (italic per APA)
-  if (item.title) {
-    parts.title = item.title
-    fragments.push(`<i class="csl-title">${escapeHtml(item.title)}</i>`)
-  }
-
-  // Assemble with delimiter "." and suffix "."
-  const innerHtml = fragments.join('. ')
-  const text = stripHtml(innerHtml) + '.'
-  const html = `<span class="csl-entry">${innerHtml}.</span>`
-
-  return { html, text, parts, links: extractLinks(item) }
+export function bibliography(item, ctx = {}) {
+  ctx = { ...ctx, _secOpts: BIB_NAME_OPTS }
+  // ... render layout children, each as a variable ...
+  // Formatting uses PUA tokens: '\uE000' + text + '\uE001' for italic
+  const _v3 = item.title ? '\uE000' + item.title + '\uE001' : ''
+  // ... assemble parts with group suppression ...
+  const _raw = /* assembled string with PUA tokens */
+  // Final stage: normalize punctuation, then split into text/html
+  const _norm = _normalizePunctuation(_raw)
+  const text = stripFormatting(_norm)     // PUA tokens stripped → plain text
+  const html = '<div class="csl-entry">' + toHtml(_norm) + '</div>'  // PUA → HTML tags + auto-links
+  return { text, html }
 }
 ```
 
-The real compiled output would be more optimized (fewer allocations, direct string building), but this shows the key patterns: `@citestyle/core` imports, null-safety checks, group suppression semantics, HTML escaping, and the dual html/text output.
+Key patterns in actual compiled output:
+- **PUA formatting tokens** embedded in strings during rendering, converted at final output
+- **`_nameConfig(ctx, el)`** for runtime name option resolution (macros shared between sections)
+- **Group suppression**: arrays collect parts, filter empties, join — no output if all variables empty
+- **Null-safe variable access**: every `item.prop` guarded with empty checks
+- **Punctuation normalization**: PUA-aware, collapses duplicate periods across formatting boundaries

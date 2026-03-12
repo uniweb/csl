@@ -25,11 +25,21 @@ export function titleCase(str) {
   const words = str.split(/(\s+)/)
   let wordIndex = 0
   const totalWords = words.filter(w => w.trim()).length
+  // Detect if the entire string is all-caps (then individual all-caps words aren't abbreviations)
+  const isAllCaps = str === str.toUpperCase() && /[a-zA-Z]/.test(str)
 
   return words
     .map(word => {
       if (!word.trim()) return word // preserve whitespace
       wordIndex++
+
+      // CSL spec: words with internal capitals (e.g., "OpenAI", "JavaScript")
+      // or all-caps words in a mixed-case string are treated as intentional
+      // casing and preserved as-is.
+      if (/[a-z][A-Z]|[A-Z][a-z].*[A-Z]/.test(word)) return word
+      // Preserve all-caps words (2+ chars) when the whole string isn't all-caps
+      if (/^[A-Z]{2,}$/.test(word) && !isAllCaps) return word
+
       // Always capitalize first and last word
       if (wordIndex === 1 || wordIndex === totalWords) {
         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()

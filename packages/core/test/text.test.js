@@ -18,6 +18,12 @@ describe('titleCase', () => {
   it('always capitalizes first and last word', () => {
     expect(titleCase('the quick and the')).toBe('The Quick and The')
   })
+
+  it('preserves words with internal capitals (abbreviations)', () => {
+    expect(titleCase('a guide to OpenAI')).toBe('A Guide to OpenAI')
+    expect(titleCase('learning JavaScript today')).toBe('Learning JavaScript Today')
+    expect(titleCase('the PhD thesis')).toBe('The PhD Thesis')
+  })
 })
 
 describe('sentenceCase', () => {
