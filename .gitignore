@@ -2,9 +2,6 @@ node_modules/
 dist/
 *.tsbuildinfo
 
-# Local knowledge base — not published
-kb/
-
 # Editor / OS
 .DS_Store
 *.swp
