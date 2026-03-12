@@ -1,0 +1,37 @@
+>>===== MODE =====>>
+bibliography
+<<===== MODE =====<<
+
+>>===== RESULT =====>>
+p. 42
+pp. 42-50
+<<===== RESULT =====<<
+
+>>===== CSL =====>>
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0">
+  <info><id /><title /><updated>2009-08-10T04:49:00+09:00</updated></info>
+  <bibliography>
+    <layout delimiter="&#10;">
+      <group delimiter=" ">
+        <label variable="page" form="short"/>
+        <text variable="page"/>
+      </group>
+    </layout>
+  </bibliography>
+</style>
+<<===== CSL =====<<
+
+>>===== INPUT =====>>
+[
+    {
+        "id": "ITEM-1",
+        "type": "article-journal",
+        "page": "42"
+    },
+    {
+        "id": "ITEM-2",
+        "type": "article-journal",
+        "page": "42-50"
+    }
+]
+<<===== INPUT =====<<

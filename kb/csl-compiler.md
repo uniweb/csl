@@ -807,13 +807,29 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 
 6. **second-field-align needs PUA awareness.** When adding the space between citation-number and entry body, must check if the first field already ends with whitespace by looking through trailing PUA close tokens (`/\s[\uE000-\uE007\uE020-\uE022]*$/`).
 
-### v0.5 — Nocase spans + more disambiguation (next)
+### v0.5 — Nocase spans + cite collapsing + 15 styles (complete)
+
+**Completed.** 15 styles compile. Nocase spans work across all text-case transforms. Numeric cite collapsing in registry. 269 tests total.
+
+- **Nocase spans**: CSL-JSON values with `<span class="nocase">iPhone</span>` are protected during case transforms, then spans are stripped from output. Title case is especially tricky — word counting for first/last word detection must span nocase boundaries (can't process segments independently). Solved with `parseNocaseSegments()` + global word index.
+- **Cite collapsing**: `collapse="citation-number"` exposed in compiled style meta. Registry detects consecutive citation numbers and compresses them into ranges with en-dash. All numbers stay within the style's prefix/suffix (e.g., `[1–3,5]` not `[1–3], [5]`).
+- **Unified text-case runtime**: All text-case transforms routed through `applyTextCase(str, textCase)` from core. Codegen no longer generates inline `.toLowerCase()` calls — the runtime function handles nocase protection uniformly.
+- **Date sort keys**: Sort comparator now extracts `YYYYMMDD` from `date-parts` objects instead of stringifying them.
+- **Note style support**: Chicago Notes-Bibliography (class="note") compiles correctly — citations produce full references for footnotes.
+- **5 new styles**: Chicago Notes-Bibliography 16th, Springer Basic, Elsevier Harvard, ABNT (NBR 6023, pt-BR locale), Cell.
+
+**Design discoveries:**
+7. **Nocase + title case requires global word tracking.** Naive approach: split string on nocase boundaries, transform each segment independently. This breaks title case because the segment-local word count differs from the global count — stop words adjacent to nocase spans get incorrectly capitalized as "last word". Fix: parse segments first, count all words globally, then apply title case with a global word index.
+8. **Cite collapsing lives in the registry, not codegen.** The compiled style renders individual citations; the registry wraps them. For collapsing, the registry renders one citation to detect prefix/suffix format, builds collapsed number strings, then assembles the final output. This avoids modifying codegen for a cross-citation concern.
+9. **Date variables need special sort key extraction.** `<key variable="issued">` can't use `String(item.issued)` because `issued` is a date object `{ 'date-parts': [[2024, 3, 15]] }`. Sort keys for date variables extract `YYYYMMDD` from date-parts.
+
+### v0.6 — Full name disambiguation + more styles (next)
 
 **Goals:**
-- Nocase span support for text-case transforms
 - Full name disambiguation (add-names, add-givenname)
-- Cite collapsing for numeric styles
-- 5 more styles (ABNT, Springer, Elsevier, APA-CV, Chicago Notes)
+- Author-date cite collapsing (collapse="year", collapse="year-suffix")
+- ibid/subsequent position for note styles
+- 5 more styles
 
 ## Implementation Plan
 
@@ -842,9 +858,12 @@ Citation registry, semantic HTML, and compiler gap fixes. 147 tests.
 
 **Completed.** 10 styles compile and produce correct output. 45 CSL fixtures passing. 211 tests total.
 
-- **Test harness:** Runner handles variant section delimiters, CITATION-ITEMS with locators, HTML stripping, numeric entity decoding (`&#8211;` → `–`), quote normalization. Auto-skips deferred features.
-- **45 fixtures:** names (particles, initials, hyphenated, form, et-al, substitute, literal, 3-author), groups (suppression, delimiter, nesting), conditions (type, variable, is-numeric, match all/any/none), dates (month, accessed, range, season, short form), numbers (ordinal, roman), labels (short, empty, plural), affixes (prefix/suffix), decorations (italic, bold, quotes), text-case, macros, strip-periods, static values, sort keys.
-- **10 styles:** APA, MLA, Chicago Author-Date, IEEE, Vancouver, Harvard, AMA, Nature, Science, ACS.
+### Phase 4.5: Nocase + Collapsing + Top 15 Styles ✅
+
+**Completed.** 15 styles compile. Nocase spans, numeric cite collapsing, unified text-case runtime. 269 tests total.
+
+- **59 CSL fixtures:** all v0.4 fixtures plus nocase (title, sentence, uppercase, lowercase, multiple spans, no-transform), conditions (multi-type), dates (localized text, numeric form), labels (contextual plural), text-case (capitalize-all), sort (descending), groups (nested delimiter), names (sort-order-all).
+- **15 styles:** APA, MLA, Chicago Author-Date, Chicago Notes-Bib, IEEE, Vancouver, Harvard, AMA, Nature, Science, ACS, Springer Basic, Elsevier Harvard, ABNT, Cell.
 
 ### Phase 5: Scholar Integration + CLI
 

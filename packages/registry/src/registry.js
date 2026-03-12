@@ -98,7 +98,96 @@ export function createRegistry(style, options = {}) {
       return citeObj
     })
 
+    // Apply cite collapsing for numeric styles
+    const collapse = style.meta?.collapse
+    if (collapse === 'citation-number' && resolvedCites.length > 1) {
+      return collapseNumericCitation(resolvedCites, ctx)
+    }
+
     return style.citation(resolvedCites, ctx)
+  }
+
+  /**
+   * Collapse numeric citations into ranges.
+   * [1, 2, 3, 5] → [1–3, 5]
+   *
+   * Renders each cite individually, extracts the citation number,
+   * then rebuilds the output with collapsed ranges.
+   */
+  function collapseNumericCitation(resolvedCites, ctx) {
+    // Sort cites by citation-number
+    const sorted = [...resolvedCites].sort((a, b) =>
+      (a.item['citation-number'] || 0) - (b.item['citation-number'] || 0)
+    )
+
+    // Extract numbers and check if all cites are simple (no locators)
+    const numbers = sorted.map(c => c.item['citation-number'] || 0)
+    const hasLocators = sorted.some(c => c.locator != null)
+
+    // Don't collapse if any cites have locators
+    if (hasLocators) {
+      return style.citation(sorted, ctx)
+    }
+
+    // Build ranges from consecutive numbers
+    const ranges = []
+    let rangeStart = numbers[0]
+    let rangeEnd = numbers[0]
+
+    for (let i = 1; i < numbers.length; i++) {
+      if (numbers[i] === rangeEnd + 1) {
+        rangeEnd = numbers[i]
+      } else {
+        ranges.push([rangeStart, rangeEnd])
+        rangeStart = numbers[i]
+        rangeEnd = numbers[i]
+      }
+    }
+    ranges.push([rangeStart, rangeEnd])
+
+    // Only collapse if there's actually a range (3+ consecutive numbers)
+    const hasCollapsible = ranges.some(([s, e]) => e - s >= 2)
+    if (!hasCollapsible) {
+      return style.citation(sorted, ctx)
+    }
+
+    // Render a single-cite to detect the formatting pattern
+    const singleResult = style.citation([sorted[0]], ctx)
+    const singleNum = String(numbers[0])
+
+    // Detect prefix/suffix pattern from single citation
+    const textIdx = singleResult.text.indexOf(singleNum)
+    const textPrefix = textIdx >= 0 ? singleResult.text.slice(0, textIdx) : ''
+    const textSuffix = textIdx >= 0 ? singleResult.text.slice(textIdx + singleNum.length) : ''
+
+    // Build collapsed text
+    const delimiter = style.meta?.citationLayoutDelimiter || ', '
+    const rangeStrs = ranges.map(([s, e]) => {
+      if (s === e) return String(s)
+      if (e - s === 1) return `${s}${delimiter}${e}`
+      return `${s}\u2013${e}` // en-dash for ranges of 3+
+    })
+    const collapsedText = textPrefix + rangeStrs.join(delimiter) + textSuffix
+
+    // Build collapsed HTML using toHtml patterns
+    const htmlPrefix = singleResult.html.includes('<sup>')
+      ? '<span class="csl-citation"><sup>' : '<span class="csl-citation">'
+    const htmlSuffix = singleResult.html.includes('</sup>')
+      ? '</sup></span>' : '</span>'
+    // Extract inner prefix/suffix from the formatted number
+    const innerHtml = singleResult.html
+      .replace(/<span class="csl-citation">/, '')
+      .replace(/<\/span>$/, '')
+      .replace(/<sup>/, '')
+      .replace(/<\/sup>/, '')
+    const htmlNumIdx = innerHtml.indexOf(singleNum)
+    const htmlInnerPrefix = htmlNumIdx >= 0 ? innerHtml.slice(0, htmlNumIdx) : ''
+    const htmlInnerSuffix = htmlNumIdx >= 0 ? innerHtml.slice(htmlNumIdx + singleNum.length) : ''
+
+    const collapsedHtml = htmlPrefix + htmlInnerPrefix +
+      rangeStrs.join(delimiter) + htmlInnerSuffix + htmlSuffix
+
+    return { text: collapsedText, html: collapsedHtml }
   }
 
   /**

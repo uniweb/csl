@@ -1,0 +1,43 @@
+>>===== MODE =====>>
+bibliography
+<<===== MODE =====<<
+
+>>===== RESULT =====>>
+2024
+2020
+2015
+<<===== RESULT =====<<
+
+>>===== CSL =====>>
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0">
+  <info><id /><title /><updated>2009-08-10T04:49:00+09:00</updated></info>
+  <bibliography>
+    <sort>
+      <key variable="issued" sort="descending"/>
+    </sort>
+    <layout>
+      <date variable="issued"><date-part name="year"/></date>
+    </layout>
+  </bibliography>
+</style>
+<<===== CSL =====<<
+
+>>===== INPUT =====>>
+[
+    {
+        "id": "ITEM-1",
+        "type": "article-journal",
+        "issued": { "date-parts": [[2015]] }
+    },
+    {
+        "id": "ITEM-2",
+        "type": "article-journal",
+        "issued": { "date-parts": [[2024]] }
+    },
+    {
+        "id": "ITEM-3",
+        "type": "article-journal",
+        "issued": { "date-parts": [[2020]] }
+    }
+]
+<<===== INPUT =====<<

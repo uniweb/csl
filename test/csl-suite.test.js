@@ -54,6 +54,7 @@ async function compileAndEval(cslXml) {
 
 /**
  * Strip nocase spans from string values.
+ * Now only used for values where nocase is irrelevant (non-text-case contexts).
  */
 function stripNocase(val) {
   if (typeof val === 'string') {
@@ -81,22 +82,8 @@ async function runFixture(fixturePath) {
     return { skip: 'uses cite collapsing (deferred)' }
   }
 
-  // Check for nocase spans in input — we can't apply text-case correctly with them
-  const hasNocase = fixture.input.some(item =>
-    Object.values(item).some(v => typeof v === 'string' && v.includes('<span class="nocase">'))
-  )
-  if (hasNocase) {
-    return { skip: 'uses nocase spans (not yet supported)' }
-  }
-
-  // Clean input items
-  const input = fixture.input.map(item => {
-    const cleaned = { ...item }
-    for (const [key, val] of Object.entries(cleaned)) {
-      cleaned[key] = stripNocase(val)
-    }
-    return cleaned
-  })
+  // Use input items as-is — nocase spans are now handled by text-case functions
+  const input = fixture.input
 
   // Build item lookup by id
   const itemsById = new Map(input.map(item => [item.id, item]))
@@ -123,7 +110,9 @@ async function runFixture(fixturePath) {
 
   let actual
   if (fixture.mode === 'bibliography') {
-    actual = input.map(item => style.bibliography(item).text).join('\n')
+    // Apply bibliography sort if the compiled style exports one
+    const items = style.bibliographySort ? [...input].sort(style.bibliographySort) : input
+    actual = items.map(item => style.bibliography(item).text).join('\n')
   } else if (fixture.citationItems) {
     // CITATION-ITEMS: array of citation sets, each set is an array of cite objects
     const results = fixture.citationItems.map(citeSet => {

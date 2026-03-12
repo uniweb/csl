@@ -8,7 +8,7 @@
 
 export { formatNames } from './names.js'
 export { formatDate } from './dates.js'
-export { titleCase, sentenceCase, capitalize } from './text.js'
+export { titleCase, sentenceCase, capitalize, applyTextCase, stripNocaseSpans } from './text.js'
 export { ordinal, longOrdinal, roman } from './numbers.js'
 export { pageRange } from './pages.js'
 export { escapeHtml, stripFormatting, toHtml } from './html.js'

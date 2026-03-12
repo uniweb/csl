@@ -573,3 +573,242 @@ describe('ACS', () => {
     expect(bib.text).toMatch(/Smith, J\. A\.; Jones, B\. C\./)
   })
 })
+
+// ── Chicago Note-Bibliography ────────────────────────────────────────────────
+
+describe('Chicago Notes-Bibliography 16th edition', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'chicago-note-bibliography.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles Chicago Notes', () => {
+    expect(style.meta.title).toContain('Chicago')
+    expect(style.meta.class).toBe('note')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toContain('Smith, John Andrew')
+    expect(bib.text).toContain('Jones')
+    expect(bib.text).toContain('Neural Correlates of Consciousness')
+    expect(bib.html).toContain('<i>Nature Neuroscience</i>')
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman, Donald Arthur')
+    expect(bib.text).toContain('Design of Everyday Things')
+    expect(bib.text).toContain('Basic Books')
+    expect(bib.text).toContain('2013')
+  })
+
+  it('generates note-style citations (full reference in note)', () => {
+    const cit = style.citation([{ item: article }])
+    // Note style: citation is a full reference, not just (Author Year)
+    expect(cit.text).toContain('Smith')
+    expect(cit.text).toContain('Neural Correlates of Consciousness')
+    expect(cit.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats chapter with editor', () => {
+    const bib = style.bibliography(chapter)
+    expect(bib.text).toContain('LeCun')
+    expect(bib.text).toContain('Deep Learning Fundamentals')
+    expect(bib.text).toContain('MIT Press')
+  })
+
+  it('renders semantic CSS classes in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('class="csl-entry"')
+    expect(bib.html).toContain('class="csl-author"')
+    expect(bib.html).toContain('class="csl-title"')
+  })
+})
+
+// ── Springer Basic (Author-Date) ────────────────────────────────────────────
+
+describe('Springer Basic (author-date)', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'springer-basic-author-date.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles Springer Basic', () => {
+    expect(style.meta.title).toContain('Springer')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toContain('Smith JA')
+    expect(bib.text).toContain('Jones BC')
+    expect(bib.text).toContain('(2024)')
+    expect(bib.text).toContain('Neural correlates of consciousness')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman DA')
+    expect(bib.text).toContain('(2013)')
+    expect(bib.text).toContain('design of everyday things')
+    expect(bib.text).toContain('Basic Books')
+  })
+
+  it('generates author-date citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('(Smith and Jones 2024)')
+  })
+
+  it('renders HTML with semantic spans', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('class="csl-entry"')
+    expect(bib.html).toContain('class="csl-author"')
+  })
+})
+
+// ── Elsevier Harvard ─────────────────────────────────────────────────────────
+
+describe('Elsevier Harvard', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'elsevier-harvard.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles Elsevier Harvard', () => {
+    expect(style.meta.title).toContain('Elsevier')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toContain('Smith, J. A.')
+    expect(bib.text).toContain('Jones, B. C.')
+    expect(bib.text).toContain('2024')
+    expect(bib.text).toContain('Neural correlates of consciousness')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman, D. A.')
+    expect(bib.text).toContain('2013')
+    expect(bib.text).toContain('design of everyday things')
+    expect(bib.text).toContain('Basic Books')
+  })
+
+  it('generates author-date citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('(Smith and Jones, 2024)')
+  })
+
+  it('auto-links DOI in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<a class="csl-doi" href="https://doi.org/10.1038/nn.2024">')
+  })
+})
+
+// ── ABNT (NBR 6023 — Brazilian standard) ─────────────────────────────────────
+
+describe('ABNT (Associação Brasileira de Normas Técnicas)', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'abnt.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles ABNT', () => {
+    expect(style.meta.title).toContain('Brasileira')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('formats article-journal with uppercase authors', () => {
+    const bib = style.bibliography(article)
+    // ABNT uses uppercase family names
+    expect(bib.text).toContain('SMITH')
+    expect(bib.text).toContain('JONES')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('NORMAN')
+    expect(bib.text).toContain('design of everyday things')
+    expect(bib.text).toContain('Basic Books')
+  })
+
+  it('generates in-text citations with semicolons', () => {
+    const cit = style.citation([{ item: article }])
+    // ABNT: (SMITH; JONES, 2024) — uppercase with semicolons
+    expect(cit.text).toContain('Smith')
+    expect(cit.text).toContain('2024')
+  })
+
+  it('uses pt-BR locale for labels', () => {
+    const bib = style.bibliography(book)
+    // ABNT uses Portuguese labels: "ed." for edition
+    expect(bib.text).toContain('ed.')
+  })
+
+  it('renders semantic CSS classes', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('class="csl-entry"')
+    expect(bib.html).toContain('class="csl-author"')
+  })
+})
+
+// ── Cell ─────────────────────────────────────────────────────────────────────
+
+describe('Cell', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'cell.csl'), 'utf-8')
+    style = await compileAndEval(csl)
+  })
+
+  it('compiles Cell', () => {
+    expect(style.meta.title).toBe('Cell')
+    expect(style.meta.class).toBe('in-text')
+  })
+
+  it('formats article-journal bibliography', () => {
+    const bib = style.bibliography(article)
+    expect(bib.text).toContain('Smith, J. A.')
+    expect(bib.text).toContain('Jones, B. C.')
+    expect(bib.text).toContain('(2024)')
+    expect(bib.text).toContain('Neural correlates of consciousness')
+    expect(bib.text).toContain('Nature Neuroscience')
+  })
+
+  it('formats book bibliography', () => {
+    const bib = style.bibliography(book)
+    expect(bib.text).toContain('Norman, D. A.')
+    expect(bib.text).toContain('(2013)')
+    expect(bib.text).toContain('design of everyday things')
+  })
+
+  it('generates numeric citations', () => {
+    const cit = style.citation([{ item: article }])
+    expect(cit.text).toBe('1')
+  })
+
+  it('renders DOI link in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<a class="csl-doi" href="https://doi.org/10.1038/nn.2024">')
+  })
+
+  it('renders italic container title in HTML', () => {
+    const bib = style.bibliography(article)
+    expect(bib.html).toContain('<i>')
+    expect(bib.html).toContain('Nature Neuroscience')
+  })
+})

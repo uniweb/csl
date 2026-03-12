@@ -258,3 +258,68 @@ describe('year-suffix disambiguation', () => {
     expect(item2['year-suffix']).toBeUndefined()
   })
 })
+
+describe('cite collapsing (citation-number)', () => {
+  let style
+
+  beforeAll(async () => {
+    const csl = readFileSync(join(fixturesDir, 'vancouver.csl'), 'utf-8')
+    style = await compileStyle(csl)
+  })
+
+  it('exposes collapse in meta', () => {
+    expect(style.meta.collapse).toBe('citation-number')
+  })
+
+  it('collapses consecutive numbers into range', () => {
+    const items = [
+      { id: 'a', type: 'article-journal', title: 'A', author: [{ family: 'A', given: 'A' }], issued: { 'date-parts': [[2020]] } },
+      { id: 'b', type: 'article-journal', title: 'B', author: [{ family: 'B', given: 'B' }], issued: { 'date-parts': [[2021]] } },
+      { id: 'c', type: 'article-journal', title: 'C', author: [{ family: 'C', given: 'C' }], issued: { 'date-parts': [[2022]] } },
+      { id: 'd', type: 'article-journal', title: 'D', author: [{ family: 'D', given: 'D' }], issued: { 'date-parts': [[2023]] } },
+    ]
+    const reg = createRegistry(style)
+    reg.addItems(items)
+    // Cite items 1, 2, 3, 4 (all consecutive)
+    const cit = reg.cite([{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }])
+    expect(cit.text).toBe('[1\u20134]')
+  })
+
+  it('collapses with gaps', () => {
+    const items = [
+      { id: 'e1', type: 'article-journal', title: 'E1', author: [{ family: 'E', given: 'E' }], issued: { 'date-parts': [[2020]] } },
+      { id: 'e2', type: 'article-journal', title: 'E2', author: [{ family: 'F', given: 'F' }], issued: { 'date-parts': [[2021]] } },
+      { id: 'e3', type: 'article-journal', title: 'E3', author: [{ family: 'G', given: 'G' }], issued: { 'date-parts': [[2022]] } },
+      { id: 'e4', type: 'article-journal', title: 'E4', author: [{ family: 'H', given: 'H' }], issued: { 'date-parts': [[2023]] } },
+      { id: 'e5', type: 'article-journal', title: 'E5', author: [{ family: 'I', given: 'I' }], issued: { 'date-parts': [[2024]] } },
+    ]
+    const reg = createRegistry(style)
+    reg.addItems(items)
+    // Cite 1, 2, 3, 5 (gap between 3 and 5) — all inside one bracket group
+    const cit = reg.cite([{ id: 'e1' }, { id: 'e2' }, { id: 'e3' }, { id: 'e5' }])
+    expect(cit.text).toBe('[1\u20133,5]')
+  })
+
+  it('does not collapse pairs (only ranges of 3+)', () => {
+    const items = [
+      { id: 'p1', type: 'article-journal', title: 'P1', author: [{ family: 'P', given: 'P' }], issued: { 'date-parts': [[2020]] } },
+      { id: 'p2', type: 'article-journal', title: 'P2', author: [{ family: 'Q', given: 'Q' }], issued: { 'date-parts': [[2021]] } },
+      { id: 'p3', type: 'article-journal', title: 'P3', author: [{ family: 'R', given: 'R' }], issued: { 'date-parts': [[2022]] } },
+    ]
+    const reg = createRegistry(style)
+    reg.addItems(items)
+    // Cite 1, 3 — gap, no range possible — still inside one bracket group
+    const cit = reg.cite([{ id: 'p1' }, { id: 'p3' }])
+    expect(cit.text).toBe('[1,3]')
+  })
+
+  it('does not collapse single cite', () => {
+    const items = [
+      { id: 's1', type: 'article-journal', title: 'S', author: [{ family: 'S', given: 'S' }], issued: { 'date-parts': [[2020]] } },
+    ]
+    const reg = createRegistry(style)
+    reg.addItems(items)
+    const cit = reg.cite([{ id: 's1' }])
+    expect(cit.text).toBe('[1]')
+  })
+})
