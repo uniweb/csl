@@ -1,2 +1,5 @@
 packages:
   - packages/*
+
+# Don't fail on unmet peer dependencies during install
+strictPeerDependencies: false
