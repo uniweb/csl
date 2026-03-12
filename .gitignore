@@ -2,6 +2,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Test temp files
+test/.tmp/
+
 # Editor / OS
 .DS_Store
 *.swp

@@ -9,13 +9,18 @@
   "bin": {
     "citestyle": "./src/cli.js"
   },
-  "files": ["src", "README.md"],
+  "files": [
+    "src",
+    "locales",
+    "README.md"
+  ],
   "scripts": {
     "test": "vitest run",
     "lint": "echo 'TODO: configure linter'"
   },
   "dependencies": {
-    "@citestyle/types": "workspace:*"
+    "@citestyle/types": "workspace:*",
+    "@xmldom/xmldom": "^0.8.11"
   },
   "devDependencies": {
     "vitest": "^3.1.1"
