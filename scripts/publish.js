@@ -42,6 +42,7 @@ const PACKAGES = [
   { name: '@citestyle/styles', path: 'packages/styles' },
   { name: '@citestyle/bibtex', path: 'packages/bibtex' },
   { name: '@citestyle/ris', path: 'packages/ris' },
+  { name: 'citestyle', path: 'packages/citestyle' },
 ]
 
 // ---------------------------------------------------------------------------

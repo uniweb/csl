@@ -1,0 +1,63 @@
+{
+  "name": "citestyle",
+  "version": "1.0.0",
+  "description": "Citation formatting for the web — compile CSL styles into lightweight JavaScript. Structured output (HTML, text, parts, links) from any of 10,000+ citation styles in ~9-13KB.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./styles/apa": "./src/styles/apa.js",
+    "./styles/mla": "./src/styles/mla.js",
+    "./styles/chicago-author-date": "./src/styles/chicago-author-date.js",
+    "./styles/ieee": "./src/styles/ieee.js",
+    "./styles/vancouver": "./src/styles/vancouver.js",
+    "./styles/harvard": "./src/styles/harvard.js",
+    "./styles/ama": "./src/styles/ama.js",
+    "./styles/nature": "./src/styles/nature.js",
+    "./styles/science": "./src/styles/science.js"
+  },
+  "files": [
+    "src"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "citation",
+    "bibliography",
+    "csl",
+    "bibtex",
+    "apa",
+    "mla",
+    "chicago",
+    "ieee",
+    "harvard",
+    "vancouver",
+    "reference",
+    "academic",
+    "scholar",
+    "doi",
+    "latex",
+    "ris",
+    "citation-style-language",
+    "citeproc",
+    "formatting"
+  ],
+  "author": "Proximify",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uniweb/csl.git",
+    "directory": "packages/citestyle"
+  },
+  "homepage": "https://github.com/uniweb/csl/tree/main/packages/citestyle#readme",
+  "bugs": {
+    "url": "https://github.com/uniweb/csl/issues"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "dependencies": {
+    "@citestyle/core": "workspace:*",
+    "@citestyle/registry": "workspace:*",
+    "@citestyle/styles": "workspace:*",
+    "@citestyle/bibtex": "workspace:*"
+  }
+}

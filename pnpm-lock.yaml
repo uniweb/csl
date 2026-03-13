@@ -25,6 +25,21 @@ importers:
         specifier: ^3.1.1
         version: 3.2.4
 
+  packages/citestyle:
+    dependencies:
+      '@citestyle/bibtex':
+        specifier: workspace:*
+        version: link:../bibtex
+      '@citestyle/core':
+        specifier: workspace:*
+        version: link:../core
+      '@citestyle/registry':
+        specifier: workspace:*
+        version: link:../registry
+      '@citestyle/styles':
+        specifier: workspace:*
+        version: link:../styles
+
   packages/compiler:
     dependencies:
       '@citestyle/types':
