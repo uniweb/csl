@@ -130,6 +130,26 @@ const items = parseBibtex(bibtexString)
 const entry = format(apa, items[0])
 ```
 
+### Copy citation buttons
+
+The separate `text` and `html` outputs map directly to the Clipboard API — paste into Word or Google Docs with formatting intact:
+
+```javascript
+import { format, exportBibtex } from 'citestyle'
+import * as apa from 'citestyle/styles/apa'
+
+const entry = format(apa, item)
+
+// Copy as rich text (pastes with italic titles, clickable DOIs)
+navigator.clipboard.write([new ClipboardItem({
+  'text/html': new Blob([entry.html], { type: 'text/html' }),
+  'text/plain': new Blob([entry.text], { type: 'text/plain' }),
+})])
+
+// Copy as BibTeX
+navigator.clipboard.writeText(exportBibtex([item]))
+```
+
 ## Pre-compiled styles
 
 Nine widely used styles ship pre-compiled:
