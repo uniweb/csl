@@ -23,8 +23,7 @@
     "README.md"
   ],
   "scripts": {
-    "test": "vitest run",
-    "lint": "echo 'TODO: configure linter'"
+    "test": "vitest run"
   },
   "dependencies": {},
   "devDependencies": {

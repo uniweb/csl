@@ -7,7 +7,6 @@
   "scripts": {
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
-    "lint": "pnpm -r run lint",
     "publish:check": "node scripts/publish.js",
     "publish:now": "node scripts/publish.js --publish",
     "publish:patch": "node scripts/publish.js --patch",

@@ -23,8 +23,7 @@
     "README.md"
   ],
   "scripts": {
-    "test": "vitest run --passWithNoTests",
-    "lint": "echo 'TODO: configure linter'"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@citestyle/core": "workspace:*",

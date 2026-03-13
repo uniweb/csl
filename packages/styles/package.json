@@ -30,7 +30,15 @@
     }
   },
   "files": [
-    "*.js",
+    "apa.js",
+    "mla.js",
+    "chicago-author-date.js",
+    "ieee.js",
+    "vancouver.js",
+    "harvard.js",
+    "ama.js",
+    "nature.js",
+    "science.js",
     "types.d.ts",
     "README.md"
   ],
