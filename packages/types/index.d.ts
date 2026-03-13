@@ -281,10 +281,11 @@ export interface CompiledStyle {
   bibliographySort?: (a: CslItem, b: CslItem) => number
 }
 
-/** A citation reference within a cite() call */
+/** A citation reference within a cite() call.
+ *  Provide either `id` (resolved from registry) or `item` (pre-resolved) — at least one is required. */
 export interface CiteRef {
   /** Item ID (resolved from registry) */
-  id: string
+  id?: string
   /** Pre-resolved item (bypasses registry lookup) */
   item?: CslItem
   /** Locator value (e.g. page number) */

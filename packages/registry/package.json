@@ -1,7 +1,15 @@
 {
   "name": "@citestyle/registry",
   "version": "0.0.2",
-  "description": "Citation registry: year-suffixes, numbering, sorting (~5-8KB)",
+  "description": "Citation registry: year-suffixes, numbering, sorting, disambiguation (~5-8KB)",
+  "author": "Uniweb",
+  "homepage": "https://github.com/uniweb/csl/tree/main/packages/registry",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uniweb/csl.git",
+    "directory": "packages/registry"
+  },
+  "keywords": ["csl", "citation", "registry", "bibliography", "disambiguation", "year-suffix"],
   "type": "module",
   "exports": {
     ".": {

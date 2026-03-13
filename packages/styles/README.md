@@ -25,7 +25,6 @@ Requires `@citestyle/core` as a peer dependency (installed automatically).
 | `@citestyle/styles/ama` | American Medical Association 11th ed. | Numeric |
 | `@citestyle/styles/nature` | Nature | Numeric |
 | `@citestyle/styles/science` | Science | Numeric |
-| `@citestyle/styles/turabian` | Turabian 9th ed. | Author-date |
 
 **Need a different style?** Any of the 10,000+ `.csl` files from the [official CSL repository](https://github.com/citation-style-language/styles) can be compiled with [`@citestyle/compiler`](../compiler):
 

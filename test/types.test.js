@@ -116,7 +116,7 @@ describe('type definitions match runtime', () => {
       typesFile.indexOf('interface CiteRef'),
       typesFile.indexOf('}', typesFile.indexOf('interface CiteRef') + 50) + 1
     )
-    expect(citeBlock).toContain('id: string')
+    expect(citeBlock).toContain('id?: string')
     expect(citeBlock).toContain('item?: CslItem')
     expect(citeBlock).toContain('locator?: string')
     expect(citeBlock).toContain('label?: string')

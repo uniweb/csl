@@ -42,10 +42,8 @@ export function formatAll(style, items, ctx = {}) {
   if (style.bibliographySort) {
     sorted.sort(style.bibliographySort)
   }
-  // Assign citation numbers
-  sorted.forEach((item, i) => {
-    item['citation-number'] = i + 1
-  })
+  // Assign citation numbers (shallow-clone to avoid mutating user's items)
+  sorted = sorted.map((item, i) => ({ ...item, 'citation-number': i + 1 }))
   return sorted.map(item => style.bibliography(item, ctx))
 }
 
@@ -61,11 +59,12 @@ export function formatCitation(style, cites, ctx = {}) {
   if (!style?.citation) {
     throw new Error('formatCitation() requires a compiled style with a citation() function')
   }
-  // Assign citation numbers if not already set
-  cites.forEach((cite, i) => {
+  // Assign citation numbers if not already set (shallow-clone to avoid mutating user's items)
+  const safeCites = cites.map((cite, i) => {
     if (cite.item && cite.item['citation-number'] == null) {
-      cite.item['citation-number'] = i + 1
+      return { ...cite, item: { ...cite.item, 'citation-number': i + 1 } }
     }
+    return cite
   })
-  return style.citation(cites, ctx)
+  return style.citation(safeCites, ctx)
 }

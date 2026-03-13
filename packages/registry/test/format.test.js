@@ -115,11 +115,13 @@ describe('formatAll()', () => {
     }
   })
 
-  it('assigns citation numbers', () => {
+  it('assigns citation numbers without mutating input', () => {
     const items = [{ ...item1 }, { ...item2 }, { ...item3 }]
-    formatAll(ieee, items)
-    // Items should have citation-number assigned
-    expect(items.some(i => i['citation-number'] != null)).toBe(true)
+    const entries = formatAll(ieee, items)
+    // Output should reflect citation numbers (IEEE produces numbered refs)
+    expect(entries.length).toBe(3)
+    // Original items should NOT be mutated
+    expect(items.every(i => i['citation-number'] == null)).toBe(true)
   })
 
   it('sorts items using bibliographySort', () => {

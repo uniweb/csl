@@ -2,6 +2,14 @@
   "name": "@citestyle/compiler",
   "version": "0.0.2",
   "description": "Build-time compiler: CSL XML → JavaScript modules",
+  "author": "Uniweb",
+  "homepage": "https://github.com/uniweb/csl/tree/main/packages/compiler",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uniweb/csl.git",
+    "directory": "packages/compiler"
+  },
+  "keywords": ["csl", "citation", "compiler", "citation-style-language", "bibliography", "build-tool"],
   "type": "module",
   "exports": {
     ".": {

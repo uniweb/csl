@@ -2,6 +2,14 @@
   "name": "@citestyle/types",
   "version": "0.0.2",
   "description": "TypeScript type definitions for CSL-JSON, compiled styles, and registry",
+  "author": "Uniweb",
+  "homepage": "https://github.com/uniweb/csl/tree/main/packages/types",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uniweb/csl.git",
+    "directory": "packages/types"
+  },
+  "keywords": ["csl", "citation", "typescript", "types", "csl-json", "bibliography"],
   "type": "module",
   "exports": {
     ".": {
