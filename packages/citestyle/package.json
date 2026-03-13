@@ -1,6 +1,6 @@
 {
   "name": "citestyle",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Citation formatting for the web — compile CSL styles into lightweight JavaScript. Structured output (HTML, text, parts, links) from any of 10,000+ citation styles in ~9-13KB.",
   "type": "module",
   "exports": {
