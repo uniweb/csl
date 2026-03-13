@@ -217,7 +217,7 @@ CSL spec coverage is comprehensive for web use cases — the complete rendering 
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    BUILD TIME                        │
+│                    BUILD TIME                       │
 │                                                     │
 │  apa.csl ──→ Citestyle Compiler ──→ apa.js (~3-5KB) │
 │  Locale terms resolved and inlined as constants     │
@@ -232,14 +232,14 @@ CSL spec coverage is comprehensive for web use cases — the complete rendering 
 │       ▲                       ▲                     │
 │       │                       │                     │
 │  Compiled Style          Registry                   │
-│  (imports core)    (year-suffix, sort)               │
+│  (imports core)    (year-suffix, sort)              │
 │       │                       │                     │
 │  CSL-JSON ──→ { html, text, parts, links }          │
 └─────────────────────────────────────────────────────┘
                         │
                         ▼
 ┌─────────────────────────────────────────────────────┐
-│                    I/O LAYER                         │
+│                    I/O LAYER                        │
 │                                                     │
 │  @citestyle/bibtex          @citestyle/ris          │
 │  BibTeX ↔ CSL-JSON          RIS ↔ CSL-JSON          │
