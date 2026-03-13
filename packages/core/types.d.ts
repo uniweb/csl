@@ -13,6 +13,8 @@ export {
   escapeHtml,
   stripFormatting,
   toHtml,
+  validateItem,
+  ValidationResult,
   NameFormatConfig,
   DateFormatConfig,
 } from '@citestyle/types'

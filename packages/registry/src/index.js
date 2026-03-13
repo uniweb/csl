@@ -8,6 +8,10 @@
  * - Citation number tracking (numeric styles)
  * - Bibliography sorting (using compiled comparator)
  * - Subsequent-author-substitute
+ *
+ * Also provides simple format/formatAll/formatCitation helpers for
+ * one-off formatting without a full registry.
  */
 
 export { createRegistry } from './registry.js'
+export { format, formatAll, formatCitation } from './format.js'

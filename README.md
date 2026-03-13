@@ -163,6 +163,32 @@ registry.addItems(items)
 const bibliography = registry.getBibliography()
 ```
 
+### From RIS
+
+```javascript
+import { parseRis } from '@citestyle/ris'
+
+const items = parseRis(risString)
+registry.addItems(items)
+
+const bibliography = registry.getBibliography()
+```
+
+### Quick one-off formatting (no registry)
+
+```javascript
+import { format, formatCitation } from '@citestyle/registry'
+import * as apa from '@citestyle/styles/apa'
+
+// Single bibliography entry
+const entry = format(apa, item)
+// → { html, text, parts, links }
+
+// Single citation
+const cite = formatCitation(apa, [{ item, locator: '42', label: 'page' }])
+// → { html, text }
+```
+
 ## Web display styles
 
 All 10,000+ existing citation styles were designed for print. On the web, a DOI that takes half a line as plain text should be a button. A 200-item publication page needs filterable cards, not a wall of formatted strings. And modern scholarship produces artifacts — code, datasets, slides, recorded talks — that print-era formats can't represent.

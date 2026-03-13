@@ -19,6 +19,7 @@ describe('@citestyle/core exports', () => {
     expect(typeof core.escapeHtml).toBe('function')
     expect(typeof core.stripFormatting).toBe('function')
     expect(typeof core.toHtml).toBe('function')
+    expect(typeof core.validateItem).toBe('function')
   })
 
   it('has no unexpected exports', async () => {
@@ -29,6 +30,7 @@ describe('@citestyle/core exports', () => {
       'ordinal', 'longOrdinal', 'roman',
       'pageRange',
       'escapeHtml', 'stripFormatting', 'toHtml',
+      'validateItem',
     ])
     for (const key of Object.keys(core)) {
       expect(expected.has(key)).toBe(true)
@@ -51,9 +53,12 @@ describe('@citestyle/compiler exports', () => {
 // ── @citestyle/registry exports ──────────────────────────────────────────────
 
 describe('@citestyle/registry exports', () => {
-  it('exports createRegistry', async () => {
+  it('exports createRegistry and format helpers', async () => {
     const registry = await import('../packages/registry/src/index.js')
     expect(typeof registry.createRegistry).toBe('function')
+    expect(typeof registry.format).toBe('function')
+    expect(typeof registry.formatAll).toBe('function')
+    expect(typeof registry.formatCitation).toBe('function')
   })
 })
 

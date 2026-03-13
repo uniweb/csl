@@ -26,8 +26,8 @@ packages/
 | Package | Runtime? | Purpose |
 |---|---|---|
 | **compiler** | No (build tool) | Parses CSL XML, resolves macros/locales, emits JS modules. CLI: `citestyle compile`, `citestyle check`. |
-| **core** | Yes (~6-8KB) | Name formatting, date formatting, text-case, ordinals, page ranges, HTML escaping. Imported by all compiled styles. |
-| **registry** | Yes (~5-8KB) | Tracks cross-citation state: year-suffix assignment, citation numbering, bibliography sorting, subsequent-author-substitute |
+| **core** | Yes (~6-8KB) | Name formatting, date formatting, text-case, ordinals, page ranges, HTML escaping, CSL-JSON validation. Imported by all compiled styles. |
+| **registry** | Yes (~5-8KB) | Tracks cross-citation state: year-suffix assignment, citation numbering, bibliography sorting, subsequent-author-substitute. Also exports simple `format`/`formatAll`/`formatCitation` helpers for one-off formatting without a registry. |
 | **styles** | Yes (~3-5KB each) | Pre-compiled popular styles (APA, MLA, Chicago, IEEE, etc.). Built by running the compiler on official CSL files. |
 | **bibtex** | Yes | BibTeX ↔ CSL-JSON: `parseBibtex(str)` → CSL-JSON[], `exportBibtex(items)` → BibTeX string. LaTeX accent conversion, @string abbreviations, name parsing. |
 | **ris** | Yes | RIS ↔ CSL-JSON: `parseRis(str)` → CSL-JSON[], `exportRis(items)` → RIS string. Tagged format with TY/ER delimiters. |
@@ -140,6 +140,12 @@ Parser → codegen → compiled APA output. Core helpers for names, dates, text-
 - **Package READMEs**: Practical README for each package (compiler, core, registry, styles, bibtex, ris, types) with usage examples and API reference.
 - **439 tests total** across 17 test files (80 core, 147 compiler, 38 registry, 66 CSL fixtures, 35 BibTeX, 20 RIS, 6 exports, 26 stress, 21 types)
 
+### Post-v0.8 — Simple format API + CSL-JSON validation
+- **Simple format API** (`@citestyle/registry`): `format(style, item)`, `formatAll(style, items)`, `formatCitation(style, cites)` — thin wrappers for one-off formatting without creating a registry. `formatAll` applies the style's sort comparator and assigns citation numbers. All throw clear errors if the style lacks the required function.
+- **CSL-JSON validation** (`@citestyle/core`): `validateItem(item)` → `{ valid, warnings }`. Checks required fields (id, type), validates type against CSL spec, validates name/date field shapes, warns on common mistakes (lowercase `doi`→`DOI`, `url`→`URL`, `isbn`→`ISBN`, `issn`→`ISSN`).
+- **Updated types**: `validateItem`, `ValidationResult`, `format`, `formatAll`, `formatCitation` added to `@citestyle/types` and per-package `types.d.ts` re-exports.
+- **473 tests total** across 19 test files (+15 format API, +19 validation)
+
 ### Next: v0.9 — ibid/subsequent + more styles + Scholar integration
 - ibid/subsequent position for note styles
 - 5 more styles (toward 25 total)
@@ -250,7 +256,11 @@ Nine test layers:
 
 9. **Type accuracy** (`test/types.test.js`) — Verifies TypeScript definitions match runtime shapes for all APIs. 21 tests.
 
-Run all tests: `npx vitest run` (439 tests, ~1.5s).
+10. **Format API tests** (`packages/registry/test/format.test.js`) — Simple format/formatAll/formatCitation helpers with error cases. 15 tests.
+
+11. **Validation tests** (`packages/core/test/validate.test.js`) — CSL-JSON item validation: required fields, name/date shapes, common mistakes. 19 tests.
+
+Run all tests: `npx vitest run` (473 tests, ~1.5s).
 
 ### Known limitations (skip markers in test runner)
 - `position=`, `ibid` — footnote-centric features

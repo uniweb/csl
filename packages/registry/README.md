@@ -113,6 +113,28 @@ Get the formatted bibliography. Items are sorted per the style's sort rules. Ret
 
 Read-only property returning the number of items in the registry.
 
+## Simple API (no registry)
+
+For one-off formatting where you don't need cross-reference features:
+
+```js
+import { format, formatAll, formatCitation } from '@citestyle/registry'
+import * as apa from '@citestyle/styles/apa'
+
+// Single bibliography entry
+const entry = format(apa, item)
+// → { html, text, parts, links }
+
+// Multiple entries with sorting
+const entries = formatAll(apa, [item1, item2, item3])
+
+// Single citation
+const cite = formatCitation(apa, [{ item, locator: '42', label: 'page' }])
+// → { html, text }
+```
+
+Use `createRegistry()` instead when you need year-suffix disambiguation, name disambiguation, cite collapsing, or subsequent-author-substitute.
+
 ## Features
 
 - **Citation numbering**: Numeric styles (IEEE, Vancouver) get auto-assigned numbers

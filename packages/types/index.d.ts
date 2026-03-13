@@ -326,6 +326,15 @@ export interface Registry {
 /** Create a citation registry for a compiled style */
 export declare function createRegistry(style: CompiledStyle, options?: RegistryOptions): Registry
 
+/** Format a single bibliography entry (no registry needed) */
+export declare function format(style: CompiledStyle, item: CslItem, ctx?: FormatContext): FormattedEntry
+
+/** Format multiple bibliography entries with basic sorting (no registry needed) */
+export declare function formatAll(style: CompiledStyle, items: CslItem[], ctx?: FormatContext): FormattedEntry[]
+
+/** Format a single inline citation (no registry needed) */
+export declare function formatCitation(style: CompiledStyle, cites: CiteRef[], ctx?: FormatContext): FormattedCitation
+
 // ---------------------------------------------------------------------------
 // Compiler
 // ---------------------------------------------------------------------------
@@ -441,6 +450,15 @@ export declare function stripFormatting(str: string): string
 
 /** Convert PUA formatting tokens to HTML tags, with auto-linking */
 export declare function toHtml(str: string): string
+
+/** Validation result from validateItem() */
+export interface ValidationResult {
+  valid: boolean
+  warnings: string[]
+}
+
+/** Validate a CSL-JSON item for required fields and correct shapes */
+export declare function validateItem(item: unknown): ValidationResult
 
 // ---------------------------------------------------------------------------
 // BibTeX I/O

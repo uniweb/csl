@@ -12,3 +12,4 @@ export { titleCase, sentenceCase, capitalize, applyTextCase, stripNocaseSpans } 
 export { ordinal, longOrdinal, roman } from './numbers.js'
 export { pageRange } from './pages.js'
 export { escapeHtml, stripFormatting, toHtml } from './html.js'
+export { validateItem } from './validate.js'
