@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/bibtex",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "BibTeX ↔ CSL-JSON parser and serializer",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/bibtex",
@@ -9,7 +9,15 @@
     "url": "https://github.com/uniweb/csl.git",
     "directory": "packages/bibtex"
   },
-  "keywords": ["bibtex", "csl", "parser", "serializer", "citation", "latex", "bibliography"],
+  "keywords": [
+    "bibtex",
+    "csl",
+    "parser",
+    "serializer",
+    "citation",
+    "latex",
+    "bibliography"
+  ],
   "type": "module",
   "exports": {
     ".": {

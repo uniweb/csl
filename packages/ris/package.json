@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/ris",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "RIS ↔ CSL-JSON parser and serializer",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/ris",
@@ -9,7 +9,15 @@
     "url": "https://github.com/uniweb/csl.git",
     "directory": "packages/ris"
   },
-  "keywords": ["ris", "csl", "parser", "serializer", "citation", "pubmed", "bibliography"],
+  "keywords": [
+    "ris",
+    "csl",
+    "parser",
+    "serializer",
+    "citation",
+    "pubmed",
+    "bibliography"
+  ],
   "type": "module",
   "exports": {
     ".": {

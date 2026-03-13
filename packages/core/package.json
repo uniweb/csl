@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/core",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "Shared runtime helpers for compiled CSL styles (~6-8KB)",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/core",
@@ -9,7 +9,14 @@
     "url": "https://github.com/uniweb/csl.git",
     "directory": "packages/core"
   },
-  "keywords": ["csl", "citation", "formatting", "names", "dates", "text-case"],
+  "keywords": [
+    "csl",
+    "citation",
+    "formatting",
+    "names",
+    "dates",
+    "text-case"
+  ],
   "type": "module",
   "exports": {
     ".": {

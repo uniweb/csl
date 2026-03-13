@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/styles",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Pre-compiled popular CSL styles (~3-5KB each)",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/styles",
@@ -9,7 +9,17 @@
     "url": "https://github.com/uniweb/csl.git",
     "directory": "packages/styles"
   },
-  "keywords": ["csl", "citation", "styles", "apa", "mla", "chicago", "ieee", "vancouver", "bibliography"],
+  "keywords": [
+    "csl",
+    "citation",
+    "styles",
+    "apa",
+    "mla",
+    "chicago",
+    "ieee",
+    "vancouver",
+    "bibliography"
+  ],
   "type": "module",
   "exports": {
     "./apa": "./apa.js",
