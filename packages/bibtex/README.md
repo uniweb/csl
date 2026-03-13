@@ -1,6 +1,8 @@
 # @citestyle/bibtex
 
-BibTeX parser and serializer. Converts between BibTeX and CSL-JSON, the standard input format for Citestyle.
+Parse BibTeX files into CSL-JSON and export CSL-JSON back to BibTeX. Handles the real-world messiness of BibTeX: LaTeX accent commands, `@string` abbreviations, `#` concatenation, name particles (von, de la), suffixes (Jr., III), and corporate authors.
+
+Use this to bring BibTeX references into the Citestyle formatting pipeline, or to export formatted bibliographies back to BibTeX for sharing with LaTeX users.
 
 ## Installation
 
@@ -8,11 +10,9 @@ BibTeX parser and serializer. Converts between BibTeX and CSL-JSON, the standard
 npm install @citestyle/bibtex
 ```
 
-## Usage
+## Parse BibTeX to CSL-JSON
 
-### Parse BibTeX to CSL-JSON
-
-```js
+```javascript
 import { parseBibtex } from '@citestyle/bibtex'
 
 const bibtex = `
@@ -28,18 +28,20 @@ const bibtex = `
 `
 
 const items = parseBibtex(bibtex)
-console.log(items[0].title)              // "A Study of DNA Replication"
-console.log(items[0].author[0].family)   // "Smith"
-console.log(items[0].author[1]['non-dropping-particle']) // "de la"
-console.log(items[0].page)               // "100-108"
+
+items[0].title                                // "A Study of DNA Replication"
+items[0].author[0].family                     // "Smith"
+items[0].author[1]['non-dropping-particle']    // "de la"
+items[0].page                                 // "100-108"
+items[0].DOI                                  // "10.1038/example"
 ```
 
-### Export CSL-JSON to BibTeX
+## Export CSL-JSON to BibTeX
 
-```js
+```javascript
 import { exportBibtex } from '@citestyle/bibtex'
 
-const items = [{
+const output = exportBibtex([{
   id: 'smith2024',
   type: 'article-journal',
   title: 'A Study of DNA Replication',
@@ -49,67 +51,72 @@ const items = [{
   volume: '620',
   page: '100-108',
   DOI: '10.1038/example',
-}]
+}])
 
-const output = exportBibtex(items)
 // @article{smith2024,
 //   author = {Smith, John},
 //   title = {A Study of DNA Replication},
 //   journal = {Nature},
-//   ...
+//   year = {2024},
+//   volume = {620},
+//   pages = {100--108},
+//   doi = {10.1038/example}
 // }
 ```
 
-### Convert LaTeX commands to Unicode
+## Full pipeline: BibTeX to formatted bibliography
 
-```js
-import { convertLatex } from '@citestyle/bibtex'
-
-convertLatex("Universit\\\"at M\\\"unchen") // "Universitat Munchen" → "Universitat München"
-convertLatex("Sch\\\"onfinkel")              // "Schonfinkel" → "Schönfinkel"
-convertLatex("{\\ss}")                       // "ß"
-convertLatex("\\o")                          // "ø"
-```
-
-### Pipeline: BibTeX to formatted bibliography
-
-```js
+```javascript
 import { parseBibtex } from '@citestyle/bibtex'
 import { createRegistry } from '@citestyle/registry'
 import * as apa from '@citestyle/styles/apa'
 
-const bibtex = readFileSync('references.bib', 'utf-8')
-const items = parseBibtex(bibtex)
+const items = parseBibtex(readFileSync('references.bib', 'utf-8'))
 
 const registry = createRegistry(apa)
 registry.addItems(items)
 
 const bibliography = registry.getBibliography()
-bibliography.forEach(entry => console.log(entry.html))
+bibliography.forEach(entry => {
+  console.log(entry.html)   // Semantic HTML with CSS classes and linked DOIs
+  console.log(entry.text)   // Plain text for copy-paste
+})
 ```
+
+## LaTeX to Unicode conversion
+
+```javascript
+import { convertLatex } from '@citestyle/bibtex'
+
+convertLatex('Universit\\"at M\\"unchen')   // "Universität München"
+convertLatex('Sch\\"onfinkel')               // "Schönfinkel"
+convertLatex('{\\ss}')                       // "ß"
+convertLatex('\\o')                          // "ø"
+convertLatex("Caf\\'e")                      // "Café"
+```
+
+120+ LaTeX accent and command mappings. Covers `\"`, `\'`, `\^`, `\~`, `\``, `\c`, `\v`, `\=`, `\H`, `\u`, `\d`, `\b`, `\k`, and special commands (`\ss`, `\o`, `\O`, `\ae`, `\AE`, `\aa`, `\AA`, `\l`, `\L`, `\i`, `\j`).
 
 ## API
 
-### `parseBibtex(str)`
+### `parseBibtex(str) → CslItem[]`
 
-Parse a BibTeX string into an array of CSL-JSON items.
+Parse a BibTeX string into CSL-JSON items.
 
-**Supported entry types:** `@article`, `@book`, `@inproceedings`, `@incollection`, `@inbook`, `@phdthesis`, `@mastersthesis`, `@misc`, `@techreport`, `@unpublished`, `@proceedings`, `@manual`, `@conference`, `@booklet`, `@online`.
+**Supported entry types**: `@article`, `@book`, `@inproceedings`, `@incollection`, `@inbook`, `@phdthesis`, `@mastersthesis`, `@misc`, `@techreport`, `@unpublished`, `@proceedings`, `@manual`, `@conference`, `@booklet`, `@online`
 
-**Features:**
-- LaTeX accent/command conversion (120+ mappings)
-- `@string` abbreviation expansion
-- `#` concatenation of string values
-- Braced and quoted string values
-- Month abbreviations (jan-dec)
+**Handles**:
+- LaTeX accent and command conversion (120+ mappings)
+- `@string` abbreviation expansion and `#` concatenation
+- Braced and quoted string values, nested brace stripping
+- Month abbreviations (`jan`–`dec`)
 - Name parsing with particles (`von`, `de`, `de la`) and suffixes (`Jr.`, `III`)
-- Corporate/institutional authors via double braces (`{{World Health Organization}}`)
-- Nested brace stripping
+- Corporate/institutional authors via double braces: `{{World Health Organization}}`
 
-### `exportBibtex(items)`
+### `exportBibtex(items) → string`
 
-Serialize an array of CSL-JSON items to a BibTeX string. Produces clean output with en-dash page ranges and proper name formatting.
+Serialize CSL-JSON items to BibTeX. Produces clean output with en-dash page ranges (`--`) and proper name formatting.
 
-### `convertLatex(str)`
+### `convertLatex(str) → string`
 
-Convert LaTeX accent sequences and special commands to Unicode characters. Handles `\"`, `\'`, `\^`, `\~`, `\c`, `\v`, and special commands like `\ss`, `\o`, `\ae`.
+Convert LaTeX accent sequences and special commands to Unicode characters. Useful when processing individual BibTeX field values outside of the full parser.

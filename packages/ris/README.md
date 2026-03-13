@@ -1,6 +1,8 @@
 # @citestyle/ris
 
-RIS parser and serializer. Converts between RIS (Research Information Systems) tagged format and CSL-JSON, the standard input format for Citestyle.
+Parse RIS files into CSL-JSON and export CSL-JSON back to RIS. RIS (Research Information Systems) is the tagged format used by PubMed, Scopus, Web of Science, Zotero, and most reference managers for bulk export.
+
+Use this to bring exported references into the Citestyle formatting pipeline, or to generate RIS files for sharing with other tools.
 
 ## Installation
 
@@ -8,11 +10,9 @@ RIS parser and serializer. Converts between RIS (Research Information Systems) t
 npm install @citestyle/ris
 ```
 
-## Usage
+## Parse RIS to CSL-JSON
 
-### Parse RIS to CSL-JSON
-
-```js
+```javascript
 import { parseRis } from '@citestyle/ris'
 
 const ris = `
@@ -30,18 +30,19 @@ ER  -
 `
 
 const items = parseRis(ris)
-console.log(items[0].title)            // "A Study of Climate Change"
-console.log(items[0].author.length)    // 2
-console.log(items[0].page)             // "100-108"
-console.log(items[0].DOI)              // "10.1038/example"
+
+items[0].title          // "A Study of Climate Change"
+items[0].author.length  // 2
+items[0].page           // "100-108"  (SP + EP merged automatically)
+items[0].DOI            // "10.1038/example"
 ```
 
-### Export CSL-JSON to RIS
+## Export CSL-JSON to RIS
 
-```js
+```javascript
 import { exportRis } from '@citestyle/ris'
 
-const items = [{
+const output = exportRis([{
   id: '1',
   type: 'article-journal',
   title: 'A Study of Climate Change',
@@ -54,48 +55,51 @@ const items = [{
   volume: '14',
   page: '100-108',
   DOI: '10.1038/example',
-}]
+}])
 
-const output = exportRis(items)
 // TY  - JOUR
 // AU  - Smith, John
 // AU  - Doe, Jane
 // TI  - A Study of Climate Change
+// JF  - Nature Climate Change
 // ...
 // ER  -
 ```
 
-### Pipeline: RIS to formatted bibliography
+## Full pipeline: RIS to formatted bibliography
 
-```js
+```javascript
 import { parseRis } from '@citestyle/ris'
 import { createRegistry } from '@citestyle/registry'
 import * as apa from '@citestyle/styles/apa'
 
-const ris = readFileSync('export.ris', 'utf-8')
-const items = parseRis(ris)
+const items = parseRis(readFileSync('export.ris', 'utf-8'))
 
 const registry = createRegistry(apa)
 registry.addItems(items)
 
 const bibliography = registry.getBibliography()
-bibliography.forEach(entry => console.log(entry.html))
+bibliography.forEach(entry => {
+  console.log(entry.html)   // Semantic HTML with CSS classes and linked DOIs
+  console.log(entry.text)   // Plain text for copy-paste
+})
 ```
 
 ## API
 
-### `parseRis(str)`
+### `parseRis(str) → CslItem[]`
 
-Parse a RIS string into an array of CSL-JSON items.
+Parse a RIS string into CSL-JSON items.
 
-**Features:**
-- 30+ RIS type codes (JOUR, BOOK, CHAP, THES, CONF, RPRT, etc.)
-- Repeatable tags (AU for multiple authors, KW for keywords)
-- SP + EP page merging into a single page range
-- Date parsing from PY and DA tags
-- Editor (A2/ED), translator, and other contributor roles
-- Common in exports from PubMed, Scopus, Web of Science, and Zotero
+**Handles**:
+- 30+ RIS type codes (`JOUR`, `BOOK`, `CHAP`, `THES`, `CONF`, `RPRT`, `GEN`, etc.)
+- Repeatable tags (`AU` for multiple authors, `KW` for keywords)
+- Automatic page merging from `SP` (start page) + `EP` (end page) tags
+- Date parsing from `PY` and `DA` tags
+- Editor (`A2`/`ED`), translator, and other contributor roles
 
-### `exportRis(items)`
+**Compatible with exports from**: PubMed, Scopus, Web of Science, Zotero, Mendeley, EndNote, Google Scholar.
 
-Serialize an array of CSL-JSON items to a RIS string. Each item is delimited by `TY` (type) and `ER` (end of record) tags.
+### `exportRis(items) → string`
+
+Serialize CSL-JSON items to a RIS string. Each record is delimited by `TY` (type) and `ER` (end of record) tags.

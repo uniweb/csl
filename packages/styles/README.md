@@ -1,6 +1,8 @@
 # @citestyle/styles
 
-Pre-compiled popular CSL styles, ready to use. Each style is ~3-5KB and imports shared helpers from `@citestyle/core`.
+The 10 most popular citation styles, pre-compiled and ready to import. Each style is ~3-5KB — a compiled JavaScript module that formats citations and bibliographies as pure function calls with zero runtime overhead.
+
+These are the same styles you'd get by running the `@citestyle/compiler` on official `.csl` files, just pre-built so you can `npm install` and go.
 
 ## Installation
 
@@ -8,106 +10,124 @@ Pre-compiled popular CSL styles, ready to use. Each style is ~3-5KB and imports 
 npm install @citestyle/styles
 ```
 
-## Available Styles
+Requires `@citestyle/core` as a peer dependency (installed automatically).
 
-| Import path | Style |
-|---|---|
-| `@citestyle/styles/apa` | American Psychological Association 7th edition |
-| `@citestyle/styles/mla` | Modern Language Association 9th edition |
-| `@citestyle/styles/chicago-author-date` | Chicago Manual of Style 17th edition (author-date) |
-| `@citestyle/styles/ieee` | IEEE |
-| `@citestyle/styles/vancouver` | Vancouver |
-| `@citestyle/styles/harvard` | Harvard (Cite Them Right) |
-| `@citestyle/styles/ama` | American Medical Association 11th edition |
-| `@citestyle/styles/turabian` | Turabian 9th edition |
-| `@citestyle/styles/nature` | Nature |
-| `@citestyle/styles/science` | Science |
+## Available styles
+
+| Import | Style | Class |
+|---|---|---|
+| `@citestyle/styles/apa` | American Psychological Association 7th ed. | Author-date |
+| `@citestyle/styles/mla` | Modern Language Association 9th ed. | Author-date |
+| `@citestyle/styles/chicago-author-date` | Chicago Manual of Style 17th ed. | Author-date |
+| `@citestyle/styles/harvard` | Harvard — Cite Them Right 12th ed. | Author-date |
+| `@citestyle/styles/ieee` | IEEE | Numeric |
+| `@citestyle/styles/vancouver` | Vancouver | Numeric |
+| `@citestyle/styles/ama` | American Medical Association 11th ed. | Numeric |
+| `@citestyle/styles/nature` | Nature | Numeric |
+| `@citestyle/styles/science` | Science | Numeric |
+| `@citestyle/styles/turabian` | Turabian 9th ed. | Author-date |
+
+**Need a different style?** Any of the 10,000+ `.csl` files from the [official CSL repository](https://github.com/citation-style-language/styles) can be compiled with [`@citestyle/compiler`](../compiler):
+
+```bash
+npx citestyle compile my-journal.csl -o my-journal.js
+```
 
 ## Usage
 
-### Direct (without registry)
+### Simplest: one-off formatting
 
-```js
+```javascript
+import { format, formatCitation } from '@citestyle/registry'
 import * as apa from '@citestyle/styles/apa'
 
 const item = {
   id: '1',
   type: 'article-journal',
-  title: 'A theory of everything',
-  author: [{ family: 'Einstein', given: 'Albert' }],
-  issued: { 'date-parts': [[2024]] },
-  'container-title': 'Physical Review Letters',
-  volume: '130',
-  page: '1-10',
-  DOI: '10.1103/example',
+  title: 'Deep learning for protein structure prediction',
+  author: [{ family: 'Jumper', given: 'John' }],
+  issued: { 'date-parts': [[2021]] },
+  'container-title': 'Nature',
+  volume: '596',
+  page: '583-589',
+  DOI: '10.1038/s41586-021-03819-2',
 }
 
-const entry = apa.bibliography(item)
-console.log(entry.text)
-console.log(entry.html)
+// Bibliography entry
+const entry = format(apa, item)
+entry.text   // Jumper, J. (2021). Deep learning for protein structure prediction. Nature, 596, 583–589.
+entry.html   // Semantic HTML with CSS classes (.csl-author, .csl-title, ...) and linked DOI
+entry.parts  // { authors, year, title, container, volume, page, doi }
+entry.links  // { doi: 'https://doi.org/10.1038/s41586-021-03819-2' }
+
+// Inline citation
+const cite = formatCitation(apa, [{ item }])
+cite.text    // (Jumper, 2021)
 ```
 
-### With registry (recommended for documents)
+### With a registry (for documents)
 
-```js
-import * as ieee from '@citestyle/styles/ieee'
+When your document has multiple citations that need to interact — numbering, disambiguation, sorting — use a registry:
+
+```javascript
 import { createRegistry } from '@citestyle/registry'
+import * as ieee from '@citestyle/styles/ieee'
 
 const registry = createRegistry(ieee)
 registry.addItems([item1, item2, item3])
 
-const citation = registry.cite([{ id: '1' }])
-console.log(citation.text) // [1]
+// Citations are auto-numbered
+registry.cite([{ id: 'jumper2021' }])
+// → { text: '[1]', html: '...' }
 
+// Bibliography is sorted per IEEE rules
 const bibliography = registry.getBibliography()
-bibliography.forEach(e => console.log(e.html))
+bibliography.forEach(entry => {
+  console.log(entry.html)  // [1] J. Jumper, "Deep learning for..."
+})
+```
+
+### Direct function calls (no registry, no helpers)
+
+Every style module exports `bibliography()` and `citation()` as pure functions:
+
+```javascript
+import * as apa from '@citestyle/styles/apa'
+
+const entry = apa.bibliography(item)  // → { text, html, parts, links }
+const cite = apa.citation([{ item }]) // → { text, html }
 ```
 
 ### Style metadata
 
-Every style exports a `meta` object:
+Every style exports a `meta` object with information from the CSL source:
 
-```js
+```javascript
 import * as apa from '@citestyle/styles/apa'
 
-console.log(apa.meta.id)    // "apa"
-console.log(apa.meta.title) // "American Psychological Association 7th edition"
-console.log(apa.meta.class) // "in-text"
+apa.meta.id     // "apa"
+apa.meta.title  // "American Psychological Association 7th edition"
+apa.meta.class  // "in-text"
 ```
 
-## Custom Styles
+## Output format
 
-For styles not included here, compile any CSL file with `@citestyle/compiler`:
+**Bibliography entries** return four representations:
 
-```bash
-npm install @citestyle/compiler
-citestyle compile my-style.csl -o my-style.js
-```
-
-Then import the output module the same way:
-
-```js
-import * as myStyle from './my-style.js'
-```
-
-## Output Format
-
-Every `bibliography(item)` call returns:
-
-```js
+```javascript
 {
-  text: '...',   // Plain text
-  html: '...',   // Semantic HTML with CSS classes and linked DOIs
-  parts: {...},  // Decomposed fields for custom layouts
-  links: {...},  // Extracted DOI, URL, PDF links
+  text: '...',    // Plain text — for copy-paste, accessibility, search indexing
+  html: '...',    // Semantic HTML — CSS classes per field, auto-linked DOIs
+  parts: { ... }, // Decomposed fields — for building cards, profiles, custom layouts
+  links: { ... }, // Extracted links — DOI, URL, ready for buttons/badges
 }
 ```
 
-Every `citation(cites)` call returns:
+**Citations** return two:
 
-```js
+```javascript
 {
-  text: '...',   // Plain text (e.g., "(Smith, 2024)")
-  html: '...',   // HTML with <span class="csl-citation">
+  text: '...',    // Plain text — "(Smith, 2024)" or "[1]"
+  html: '...',    // HTML — <span class="csl-citation">...</span>
 }
 ```

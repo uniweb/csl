@@ -1,116 +1,62 @@
 # @citestyle/compiler
 
-Build-time compiler that transforms [CSL](https://citationstyles.org/) XML files into lightweight JavaScript modules.
+Transform any [CSL](https://citationstyles.org/) style into a lightweight JavaScript module at build time. The compiled output is a self-contained ES module (~3-5KB) that formats citations and bibliographies as pure function calls — no XML parsing, no runtime interpreter, no dependencies beyond `@citestyle/core`.
+
+This is a **build tool**. Install it as a dev dependency, compile your styles once, and ship only the tiny output modules to production.
 
 ## Installation
 
 ```bash
-npm install @citestyle/compiler
+npm install -D @citestyle/compiler
 ```
 
-## CLI Usage
+## CLI
 
 ### Compile a style
 
 ```bash
-# Single file to stdout
-citestyle compile apa.csl
+# Compile to a file
+npx citestyle compile apa.csl -o apa.js
 
-# Single file to output
-citestyle compile apa.csl -o apa.js
+# Compile with a specific locale
+npx citestyle compile apa.csl --locale fr-FR -o apa-fr.js
 
-# Batch compile all .csl files in a directory
-citestyle compile styles/*.csl -o dist/
+# Batch compile every .csl file in a directory
+npx citestyle compile styles/*.csl -o dist/
 
-# With a specific locale
-citestyle compile apa.csl --locale fr-FR -o apa-fr.js
-
-# Multi-locale (outputs one file per locale)
-citestyle compile apa.csl --locale en-US,fr-FR -o dist/
+# Multi-locale (one output file per locale)
+npx citestyle compile apa.csl --locale en-US,fr-FR -o dist/
 
 # CommonJS output
-citestyle compile apa.csl --format cjs -o apa.cjs
+npx citestyle compile apa.csl --format cjs -o apa.cjs
+
+# Print to stdout (pipe to other tools)
+npx citestyle compile apa.csl
 ```
 
-### Validate a style
+### Validate without compiling
 
 ```bash
-# Check without compiling — reports warnings
-citestyle check apa.csl
+# Check a style for warnings without generating output
+npx citestyle check apa.csl
 
 # Batch validate
-citestyle check styles/*.csl
+npx citestyle check styles/*.csl
 ```
 
-### CLI Options
+### CLI options
 
 | Option | Description | Default |
 |---|---|---|
 | `-o, --output <path>` | Output file or directory | stdout |
-| `--locale <lang>` | Target locale, comma-separated for multi-locale | `en-US` |
+| `--locale <lang>` | Target locale(s), comma-separated | `en-US` |
 | `--format <esm\|cjs>` | Output module format | `esm` |
 
-## Programmatic API
+## Using a compiled style
 
-```js
-import { compile, parse, resolveLocale, generate } from '@citestyle/compiler'
-```
+The compiled module exports pure functions. No registry needed for basic formatting:
 
-### `compile(cslXml, options?)`
-
-Full pipeline: XML string to JavaScript module.
-
-```js
-import { readFileSync } from 'node:fs'
-
-const cslXml = readFileSync('apa.csl', 'utf-8')
-const { code, meta } = compile(cslXml, { locale: 'en-US' })
-
-console.log(meta.title) // "American Psychological Association 7th edition"
-console.log(meta.class) // "in-text"
-
-// `code` is a complete ES module string — write it to a file
-writeFileSync('apa.js', code)
-```
-
-**Parameters:**
-- `cslXml` (string) -- CSL XML source
-- `options.locale` (string) -- Target locale (default: style's default or `'en-US'`)
-- `options.format` (`'esm'` | `'cjs'`) -- Output format (default: `'esm'`)
-
-**Returns:** `{ code: string, meta: { id, title, class, version, defaultLocale } }`
-
-### `parse(cslXml)`
-
-Parse CSL XML into an AST. Useful for validation or inspection without code generation.
-
-```js
-const ast = parse(cslXml)
-console.log(ast.info.title)
-console.log(Object.keys(ast.macros))
-```
-
-### `resolveLocale(locale, overrides?)`
-
-Resolve locale data by merging: style-level overrides, locale XML file, and en-US fallback.
-
-```js
-const locale = resolveLocale('fr-FR', ast.localeOverrides)
-```
-
-### `generate(ast, locale, options?)`
-
-Generate JavaScript module source from a parsed AST and resolved locale.
-
-```js
-const ast = parse(cslXml)
-const locale = resolveLocale('en-US', ast.localeOverrides)
-const code = generate(ast, locale, { format: 'esm' })
-```
-
-## Using a Compiled Style
-
-```js
+```javascript
 import * as apa from './apa.js'
 
 const item = {
@@ -125,14 +71,95 @@ const item = {
   DOI: '10.1038/example',
 }
 
-// Format a bibliography entry
+// Bibliography entry — returns structured output, not a flat string
 const entry = apa.bibliography(item)
-console.log(entry.text)
-// Smith, J. (2024). Deep learning for citation analysis. Nature, 620, 100–108.
-console.log(entry.html)
-// Semantic HTML with <i>, CSS classes, linked DOI
+entry.text  // Smith, J. (2024). Deep learning for citation analysis. Nature, 620, 100–108.
+entry.html  // Semantic HTML with <i>, CSS classes (.csl-author, .csl-title, ...), linked DOI
+entry.parts // { authors, year, title, container, doi, ... }
+entry.links // { doi: 'https://doi.org/10.1038/example' }
 
-// Format an inline citation
-const citation = apa.citation([{ item }])
-console.log(citation.text) // (Smith, 2024)
+// Inline citation
+const cite = apa.citation([{ item }])
+cite.text   // (Smith, 2024)
+
+// Style metadata
+apa.meta.title  // "American Psychological Association 7th edition"
+apa.meta.class  // "in-text"
 ```
+
+For documents with multiple citations (where you need numbering, disambiguation, and sorting), use [`@citestyle/registry`](../registry).
+
+## Programmatic API
+
+```javascript
+import { compile, parse, resolveLocale, generate } from '@citestyle/compiler'
+```
+
+### `compile(cslXml, options?)`
+
+Full pipeline: CSL XML string to JavaScript module source.
+
+```javascript
+import { readFileSync, writeFileSync } from 'node:fs'
+import { compile } from '@citestyle/compiler'
+
+const cslXml = readFileSync('apa.csl', 'utf-8')
+const { code, meta } = compile(cslXml, { locale: 'en-US' })
+
+writeFileSync('apa.js', code)
+
+console.log(meta.title) // "American Psychological Association 7th edition"
+console.log(meta.class) // "in-text"
+```
+
+**Options:**
+- `locale` (string) — Target locale (default: style's default or `'en-US'`)
+- `format` (`'esm'` | `'cjs'`) — Output format (default: `'esm'`)
+
+**Returns:** `{ code: string, meta: { id, title, class, version, defaultLocale } }`
+
+### `parse(cslXml)`
+
+Parse CSL XML into an AST without generating code. Useful for validation, inspection, or building custom tooling.
+
+```javascript
+const ast = parse(cslXml)
+console.log(ast.info.title)
+console.log(Object.keys(ast.macros))
+```
+
+### `resolveLocale(locale, overrides?)`
+
+Resolve locale data by merging: style-level term overrides → locale XML file → en-US fallback.
+
+```javascript
+const locale = resolveLocale('fr-FR', ast.localeOverrides)
+```
+
+### `generate(ast, locale, options?)`
+
+Generate JavaScript module source from a parsed AST and resolved locale. Use this when you need control over the parse and locale resolution steps separately.
+
+```javascript
+const ast = parse(cslXml)
+const locale = resolveLocale('en-US', ast.localeOverrides)
+const code = generate(ast, locale, { format: 'esm' })
+```
+
+## What gets compiled
+
+Every CSL construct maps directly to JavaScript:
+
+| CSL XML | Compiled output |
+|---|---|
+| `<macro name="author">` | `function macro_author(item, ctx) { ... }` |
+| `<choose><if type="article-journal">` | `if (item.type === 'article-journal')` |
+| `<names variable="author">` | `formatNames(item.author, { /* config baked in */ })` |
+| `<group delimiter=", ">` | Array collect → filter empties → join |
+| Locale terms (`"et al."`, `"Retrieved from"`) | Inlined string constants |
+
+The result is a module that exports `bibliography()`, `citation()`, `bibliographySort()`, and `meta` — pure functions with no XML, no interpretation, and no runtime locale resolution.
+
+## Compatibility
+
+44 styles from the [official CSL repository](https://github.com/citation-style-language/styles) have been compiled and verified, spanning author-date, numeric, note, and label citation formats across English, German, Portuguese, French, and Spanish locales.
