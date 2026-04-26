@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/registry",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Citation registry: year-suffixes, numbering, sorting, disambiguation (~5-8KB)",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/registry",

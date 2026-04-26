@@ -87,8 +87,22 @@ export function createRegistry(style, options = {}) {
    * Format a citation cluster.
    * Resolves item IDs to items and delegates to the compiled style's citation().
    *
-   * @param {Array<{id: string, item?: object, locator?: string, label?: string, prefix?: string, suffix?: string}>} cites
-   * @param {object} [ctx] - Format context
+   * **Author suppression** (CSL `suppress-author` mode) is implemented as a
+   * post-render strip: render normally, then remove the
+   * `<span class="csl-author">…</span>` wrappers and any orphaned
+   * surrounding punctuation (leading "Smith, " or trailing space). The
+   * compiler doesn't emit a per-mode citation branch yet — the standard
+   * CSL way — so this layer fills the gap. Two ways to trigger it:
+   *
+   *   - `ctx.mode === 'suppress-author'` (whole cluster, CSL-canonical)
+   *   - `cite.suppressAuthor === true` on every cite in a single-cite cluster
+   *
+   * Mixed-suppression clusters (some cites suppressed, others not) aren't
+   * supported here — the cluster renderer would need per-cite re-rendering,
+   * which is more rework than the current consumer demands.
+   *
+   * @param {Array<{id: string, item?: object, locator?: string, label?: string, prefix?: string, suffix?: string, suppressAuthor?: boolean}>} cites
+   * @param {object} [ctx] - Format context. `mode: 'suppress-author'` strips the author from the rendered cluster.
    * @returns {import('@citestyle/types').FormattedCitation}
    */
   function cite(cites, ctx = {}) {
@@ -114,6 +128,7 @@ export function createRegistry(style, options = {}) {
       if (c.label != null) citeObj.label = c.label
       if (c.prefix != null) citeObj.prefix = c.prefix
       if (c.suffix != null) citeObj.suffix = c.suffix
+      if (c.suppressAuthor) citeObj.suppressAuthor = true
 
       // Attach per-item disambiguation overrides
       const disambig = disambigState.get(String(item.id))
@@ -122,16 +137,26 @@ export function createRegistry(style, options = {}) {
       return citeObj
     })
 
+    // Decide whether to suppress the author across the whole cluster.
+    const allCitesSuppress = resolvedCites.length > 0 &&
+      resolvedCites.every(c => c.suppressAuthor)
+    const suppressAuthor = ctx.mode === 'suppress-author' || allCitesSuppress
+
     // Apply cite collapsing
     const collapse = style.meta?.collapse
+    let result
     if (collapse === 'citation-number' && resolvedCites.length > 1) {
-      return collapseNumericCitation(resolvedCites, ctx)
-    }
-    if ((collapse === 'year' || collapse === 'year-suffix' || collapse === 'year-suffix-ranged') && resolvedCites.length > 1) {
-      return collapseAuthorDateCitation(resolvedCites, ctx, collapse)
+      result = collapseNumericCitation(resolvedCites, ctx)
+    } else if ((collapse === 'year' || collapse === 'year-suffix' || collapse === 'year-suffix-ranged') && resolvedCites.length > 1) {
+      result = collapseAuthorDateCitation(resolvedCites, ctx, collapse)
+    } else {
+      result = style.citation(resolvedCites, ctx)
     }
 
-    return style.citation(resolvedCites, ctx)
+    if (suppressAuthor) {
+      result = stripAuthor(result)
+    }
+    return result
   }
 
   // ── Numeric cite collapsing ──────────────────────────────────────────────
@@ -564,6 +589,59 @@ export function createRegistry(style, options = {}) {
 }
 
 // ── Helper functions ──────────────────────────────────────────────────────
+
+/**
+ * Strip the author from a formatted citation result.
+ *
+ * Citation styles that opt into `<span class="csl-author">` wrappers
+ * (every shipped style does today) can have their author portion
+ * removed by string-substitution: drop the wrapper and clean up
+ * orphaned surrounding punctuation. The result is the
+ * "(2024, p. 42)" / "(2024)" form authors reach for when the author's
+ * name already appears in the running prose.
+ *
+ * Cleanup rules:
+ *   - "Author, " (author span followed by comma + space) -> ""
+ *   - "Author " (author span followed by space) -> ""
+ *   - bare "Author" with no trailing punctuation -> ""
+ *
+ * The text form is rebuilt from the stripped HTML rather than parallel-
+ * stripped — keeps the two views in sync without duplicating the
+ * regex set.
+ */
+function stripAuthor(result) {
+  if (!result || typeof result.html !== 'string') return result
+
+  let html = result.html
+  // Remove every csl-author span plus a trailing ", " or " " if present.
+  // Multi-cite clusters can have more than one — flag g.
+  html = html.replace(
+    /<span class="csl-author"[^>]*>[\s\S]*?<\/span>(,\s*|\s+)?/g,
+    '',
+  )
+
+  // Tidy any leftover doubled spaces or stray opening punctuation.
+  html = html
+    .replace(/\(\s+/g, '(')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+,/g, ',')
+    .replace(/\(,\s*/g, '(')
+
+  const text = htmlToPlainText(html)
+  return { text, html }
+}
+
+/** Strip HTML tags and decode the entity subset citestyle emits. */
+function htmlToPlainText(html) {
+  if (!html) return ''
+  return String(html)
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+}
 
 /**
  * Apply subsequent-author-substitute to formatted bibliography entries.

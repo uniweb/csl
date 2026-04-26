@@ -113,6 +113,34 @@ describe('Registry with APA style', () => {
     expect(cit.text).toContain('42')
   })
 
+  it('cite() suppresses author when ctx.mode is suppress-author', () => {
+    const reg = createRegistry(style)
+    reg.addItems([smith2024])
+    const cit = reg.cite([{ id: 'smith2024' }], { mode: 'suppress-author' })
+    expect(cit.text).not.toContain('Smith')
+    expect(cit.text).toContain('2024')
+    expect(cit.html).not.toContain('csl-author')
+  })
+
+  it('cite() suppresses author when CiteRef.suppressAuthor is true', () => {
+    const reg = createRegistry(style)
+    reg.addItems([smith2024])
+    const cit = reg.cite([{ id: 'smith2024', suppressAuthor: true }])
+    expect(cit.text).not.toContain('Smith')
+    expect(cit.text).toContain('2024')
+  })
+
+  it('cite() author-suppression preserves locator', () => {
+    const reg = createRegistry(style)
+    reg.addItems([smith2024])
+    const cit = reg.cite(
+      [{ id: 'smith2024', locator: '42', label: 'page', suppressAuthor: true }],
+    )
+    expect(cit.text).not.toContain('Smith')
+    expect(cit.text).toContain('2024')
+    expect(cit.text).toContain('42')
+  })
+
   it('getBibliography() returns formatted entries', () => {
     const reg = createRegistry(style)
     reg.addItems([smith2024, jones2023])

@@ -296,6 +296,11 @@ export interface CiteRef {
   prefix?: string
   /** Citation suffix text */
   suffix?: string
+  /** Suppress the author in the rendered citation — for prose where the
+   *  author is already named in the surrounding text ("Smith (2024)…").
+   *  Equivalent to setting `ctx.mode = 'suppress-author'` for the cluster.
+   *  Implemented as a post-render strip of the `csl-author` span. */
+  suppressAuthor?: boolean
   /** Internal: disambiguation context (set by registry) */
   _disambig?: DisambiguationContext
 }
