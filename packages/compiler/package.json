@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/compiler",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Build-time compiler: CSL XML → JavaScript modules",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/compiler",

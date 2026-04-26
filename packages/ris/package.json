@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/ris",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "RIS ↔ CSL-JSON parser and serializer",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/ris",
