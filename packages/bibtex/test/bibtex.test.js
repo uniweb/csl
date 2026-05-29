@@ -400,3 +400,31 @@ describe('BibTeX round-trip', () => {
     expect(items2[0].author).toEqual(items1[0].author)
   })
 })
+
+// ── $-sigil field preservation (content-sync identity) ──────────────────────
+
+describe('$-sigil field round-trip', () => {
+  it('preserves a $uuid field on parse (not dropped like unknown fields)', () => {
+    const [item] = parseBibtex('@article{smith2026,\n  $uuid = {0192-7f3c},\n  title = {On Rust},\n  year = {2026}\n}')
+    expect(item.$uuid).toBe('0192-7f3c')
+    expect(item.title).toBe('On Rust') // known fields unaffected
+  })
+
+  it('emits $-sigil fields on export, as the leading field', () => {
+    const out = exportBibtex([{ $uuid: '0192-abcd', id: 'x', type: 'article-journal', title: 'T' }])
+    expect(out).toContain('$uuid = {0192-abcd}')
+    expect(out).toMatch(/@\w+\{x,\n\s+\$uuid = \{0192-abcd\}/) // leads the entry
+  })
+
+  it('round-trips a $uuid through parse → export → parse, idempotently', () => {
+    const src = exportBibtex([{ $uuid: 'u-1', id: 'k', type: 'article-journal', title: 'T', issued: { 'date-parts': [[2026]] } }])
+    const reparsed = parseBibtex(src)
+    expect(reparsed[0].$uuid).toBe('u-1')
+    expect(exportBibtex(reparsed)).toBe(src) // fixpoint
+  })
+
+  it('still drops genuinely unknown (non-$) fields', () => {
+    const [item] = parseBibtex('@article{k, frobnicate = {nope}, title = {T}}')
+    expect(item.frobnicate).toBeUndefined()
+  })
+})

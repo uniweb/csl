@@ -111,6 +111,13 @@ export function exportBibtex(items) {
     const key = generateKey(item)
     const fields = []
 
+    // Preserve `$`-sigil fields verbatim (out-of-band metadata — e.g. `$uuid` for
+    // content-sync identity — not CSL). Emitted first so a pristine entry gains a
+    // stable leading field and a parse↔export cycle is idempotent.
+    for (const k of Object.keys(item)) {
+      if (k.startsWith('$') && item[k] != null) fields.push([k, wrapBraces(String(item[k]))])
+    }
+
     // Names
     if (item.author) {
       const val = serializeNames(item.author)

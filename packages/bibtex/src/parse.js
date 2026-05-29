@@ -570,6 +570,14 @@ function convertToCSL(entry) {
     if (/^https?:\/\//i.test(hp)) item.URL = hp
   }
 
+  // Preserve `$`-sigil fields verbatim — out-of-band metadata (e.g. `$uuid` for
+  // content-sync identity), not CSL. Kept instead of dropped, and passed through
+  // untouched (no LaTeX conversion) so a sync round-trip carries identity in the
+  // file. The raw tokenizer already accepts `$`-prefixed field names.
+  for (const [name, value] of Object.entries(fields)) {
+    if (name.startsWith('$')) item[name] = value
+  }
+
   return item
 }
 
