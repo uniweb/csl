@@ -13,11 +13,23 @@
  * @param {import('@citestyle/types').CompiledStyle} style - A compiled CSL style module
  * @param {object} [options]
  * @param {string} [options.subsequentAuthorSubstitute] - Override style's substitute string
+ * @param {import('@citestyle/types').LocalePack} [options.locale] - A locale pack (from
+ *   `@citestyle/locales`) every citation and bibliography entry is formatted in, unless a call's
+ *   own `ctx.locale` names another. Without one, the style's default locale.
  * @returns {import('@citestyle/types').Registry}
  */
 export function createRegistry(style, options = {}) {
   if (!style || (!style.bibliography && !style.citation)) {
     throw new Error('createRegistry requires a compiled CSL style with bibliography() or citation()')
+  }
+
+  /**
+   * A call's format context, in the registry's locale unless it names its own.
+   * Disambiguation renders in the registry's locale.
+   */
+  function withLocale(ctx = {}) {
+    if (options.locale == null || ctx.locale !== undefined) return ctx
+    return { ...ctx, locale: options.locale }
   }
 
   /** @type {Map<string, import('@citestyle/types').CslItem>} */
@@ -111,6 +123,7 @@ export function createRegistry(style, options = {}) {
     }
 
     ensureDisambiguated()
+    ctx = withLocale(ctx)
 
     const resolvedCites = cites.map(c => {
       const item = c.item || itemsById.get(String(c.id))
@@ -408,7 +421,7 @@ export function createRegistry(style, options = {}) {
     const item = itemsById.get(id)
     const disambig = disambigState.get(id)
     const cite = disambig ? { item, _disambig: disambig } : { item }
-    return style.citation([cite]).text
+    return style.citation([cite], withLocale()).text
   }
 
   /**
@@ -556,13 +569,14 @@ export function createRegistry(style, options = {}) {
     if (!style.bibliography) return []
 
     ensureDisambiguated()
+    ctx = withLocale(ctx)
 
     // Collect all items
     let items = itemOrder.map(id => itemsById.get(id)).filter(Boolean)
 
-    // Sort if the style provides a comparator
+    // Sort if the style provides a comparator (its sort keys render in the same locale)
     if (style.bibliographySort) {
-      items = [...items].sort(style.bibliographySort)
+      items = [...items].sort((a, b) => style.bibliographySort(a, b, ctx))
     }
 
     // Format each item

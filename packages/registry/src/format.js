@@ -4,6 +4,9 @@
  * Use these for one-off formatting where you don't need cross-reference
  * features (year-suffix, citation numbering, disambiguation, collapsing).
  * For documents with multiple citations, use createRegistry() instead.
+ *
+ * Each takes the style's format context, so `{ locale }` — a locale pack from
+ * `@citestyle/locales` — formats in that pack's language.
  */
 
 /**
@@ -11,7 +14,7 @@
  *
  * @param {import('@citestyle/types').CompiledStyle} style - A compiled CSL style module
  * @param {import('@citestyle/types').CslItem} item - CSL-JSON item
- * @param {import('@citestyle/types').FormatContext} [ctx] - Optional format context
+ * @param {import('@citestyle/types').FormatContext} [ctx] - Optional format context (`{ locale }`)
  * @returns {import('@citestyle/types').FormattedEntry}
  */
 export function format(style, item, ctx = {}) {
@@ -40,7 +43,8 @@ export function formatAll(style, items, ctx = {}) {
   }
   let sorted = [...items]
   if (style.bibliographySort) {
-    sorted.sort(style.bibliographySort)
+    // The sort keys render in the same locale as the entries
+    sorted.sort((a, b) => style.bibliographySort(a, b, ctx))
   }
   // Assign citation numbers (shallow-clone to avoid mutating user's items)
   sorted = sorted.map((item, i) => ({ ...item, 'citation-number': i + 1 }))
