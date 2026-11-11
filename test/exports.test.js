@@ -31,6 +31,7 @@ describe('@citestyle/core exports', () => {
       'pageRange',
       'escapeHtml', 'stripFormatting', 'toHtml',
       'validateItem',
+      'localize', 'mergeLayers', 'getTerm', 'formatOrdinal', 'dayOrdinal', 'dateConfig', 'LOCALE_FORMAT',
     ])
     for (const key of Object.keys(core)) {
       expect(expected.has(key)).toBe(true)

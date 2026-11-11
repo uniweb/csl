@@ -1,3 +1,5 @@
+import { getTerm, dayOrdinal } from './locale.js'
+
 /**
  * Date formatting engine.
  *
@@ -6,10 +8,14 @@
  *
  * @param {import('@citestyle/types').CslDate} date
  * @param {object} config - Style-specific config baked in by compiler
- * @param {Array<{name: string, form?: string, prefix?: string, suffix?: string, rangeDelimiter?: string}>} [config.dateParts]
+ * @param {Array<{name: string, form?: string, prefix?: string, suffix?: string, rangeDelimiter?: string, stripPeriods?: boolean}>} [config.dateParts]
  *   - Date parts to render, in order
  * @param {object} [config.monthTerms] - Locale month terms { '1': 'January', ... }
  * @param {object} [config.seasonTerms] - Locale season terms { '1': 'Spring', ... }
+ * @param {string} [config.delimiter] - Between the rendered parts (a localized date format's own)
+ * @param {object} [config.locale] - A resolved locale (see `localize`): short month names and day
+ *   ordinals are its terms. Without one, a short month is the long name's first three letters and
+ *   a day ordinal is English, as a style's default resolution has always rendered them.
  * @returns {string} Formatted date string
  */
 export function formatDate(date, config = {}) {
@@ -25,6 +31,8 @@ export function formatDate(date, config = {}) {
     dateParts = [{ name: 'year' }],
     monthTerms = DEFAULT_MONTHS,
     seasonTerms = DEFAULT_SEASONS,
+    delimiter = '',
+    locale,
   } = config
 
   const dp = parts[0]
@@ -42,14 +50,14 @@ export function formatDate(date, config = {}) {
   // Format each requested date part
   const result = []
   for (const partCfg of dateParts) {
-    const val = formatDatePart(partCfg, { year, month, day, date }, { monthTerms, seasonTerms })
+    const val = formatDatePart(partCfg, { year, month, day, date }, { monthTerms, seasonTerms, locale })
     if (val === '') continue
 
     let out = val
     if (hasRange) {
       const val2 = formatDatePart(partCfg, {
         year: year2, month: month2, day: day2, date,
-      }, { monthTerms, seasonTerms })
+      }, { monthTerms, seasonTerms, locale })
       if (val2 && val2 !== val) {
         const rangeDelim = partCfg.rangeDelimiter || '\u2013'
         out = val + rangeDelim + val2
@@ -61,7 +69,7 @@ export function formatDate(date, config = {}) {
     result.push(out)
   }
 
-  return result.join('')
+  return result.join(delimiter)
 }
 
 /**
@@ -87,15 +95,22 @@ function formatDatePart(cfg, vals, terms) {
     if (month == null) return ''
     if (form === 'numeric') return String(month)
     if (form === 'numeric-leading-zeros') return String(month).padStart(2, '0')
-    if (form === 'short') return (terms.monthTerms[String(month)] || '').slice(0, 3)
-    // Default: long form
-    return terms.monthTerms[String(month)] || ''
+    let word
+    if (form === 'short') {
+      word = terms.locale
+        ? getTerm(terms.locale, 'month-' + String(month).padStart(2, '0') + ':short')
+        : (terms.monthTerms[String(month)] || '').slice(0, 3)
+    } else {
+      // Default: long form
+      word = terms.monthTerms[String(month)] || ''
+    }
+    return cfg.stripPeriods ? word.replace(/\./g, '') : word
   }
 
   if (name === 'day') {
     if (day == null) return ''
     if (form === 'numeric-leading-zeros') return String(day).padStart(2, '0')
-    if (form === 'ordinal') return ordinalDay(day)
+    if (form === 'ordinal') return terms.locale ? dayOrdinal(terms.locale, day, month) : ordinalDay(day)
     return String(day)
   }
 

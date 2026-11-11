@@ -6,13 +6,14 @@
  *
  * @param {string} pages - Raw page string (e.g., "321-328")
  * @param {string} [format] - 'chicago'|'expanded'|'minimal'|'minimal-two'
+ * @param {string} [delimiter='–'] - The locale's "page-range-delimiter" term
  * @returns {string} Formatted page range
  */
-export function pageRange(pages, format) {
+export function pageRange(pages, format, delimiter = '\u2013') {
   if (!pages) return ''
 
-  // Normalize hyphens to en-dash for output
-  const normalized = pages.replace(/\s*[-\u2013]\s*/, '\u2013')
+  // Normalize hyphens to the range delimiter (an en-dash unless the locale says otherwise)
+  const normalized = pages.replace(/\s*[-\u2013]\s*/, () => delimiter)
 
   if (!format || format === 'expanded') {
     // Expanded: show full numbers (321–328)
@@ -27,15 +28,15 @@ export function pageRange(pages, format) {
   const last = match[2]
 
   if (format === 'minimal') {
-    return first + '\u2013' + minimalEnd(first, last, 1)
+    return first + delimiter + minimalEnd(first, last, 1)
   }
 
   if (format === 'minimal-two') {
-    return first + '\u2013' + minimalEnd(first, last, 2)
+    return first + delimiter + minimalEnd(first, last, 2)
   }
 
   if (format === 'chicago') {
-    return first + '\u2013' + chicagoEnd(first, last)
+    return first + delimiter + chicagoEnd(first, last)
   }
 
   return normalized
