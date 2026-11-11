@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/locales",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CSL locale packs: format a compiled citation style in any of the official CSL languages",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/locales",
