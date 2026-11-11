@@ -203,13 +203,15 @@ function _date(L, i) {
 }
 
 /**
- * A <date> element's description for building its configuration in a pack's locale: its form,
- * its date-parts attribute, and its own <date-part> children (only the attributes they set).
+ * A <date> element's description for building its configuration in a locale: its form, its
+ * date-parts attribute, its delimiter, and its own <date-part> children (only the attributes they
+ * set).
  */
 export function dateSpec(node) {
   const spec = {}
   if (node.form) spec.form = node.form
   if (node.datePartsAttr) spec.dp = node.datePartsAttr
+  if (node.datePartsDelimiter) spec.delimiter = node.datePartsDelimiter
   const parts = (node.dateParts || []).map((dp) => {
     const part = { name: dp.name }
     if (dp.form) part.form = dp.form

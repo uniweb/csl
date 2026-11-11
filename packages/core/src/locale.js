@@ -233,15 +233,16 @@ function gendered(L, key, gender) {
  * The configuration `formatDate` takes for one `<date>` of a style, in a resolved locale. A
  * localized date (form "text" or "numeric") takes the locale's date format: its parts, in its
  * order, with its delimiter; the style's `<date-part>` children override their attributes, but not
- * their affixes. The `date-parts` attribute keeps only the parts it names.
+ * their affixes. A date of the style's own takes its parts and its delimiter. The `date-parts`
+ * attribute keeps only the parts it names.
  *
  * @param {object} L - a resolved locale
- * @param {{ form?: string, dp?: string, parts?: object[] }} spec - the style's `<date>`
+ * @param {{ form?: string, dp?: string, delimiter?: string, parts?: object[] }} spec - the style's `<date>`
  * @returns {object}
  */
 export function dateConfig(L, spec) {
   let parts = spec.parts || []
-  let delimiter = ''
+  let delimiter = spec.delimiter || ''
   const format = spec.form ? L.df?.[spec.form] : null
   if (format) {
     const own = parts

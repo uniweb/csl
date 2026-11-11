@@ -189,6 +189,12 @@ describe('day ordinals and dates in a resolved locale', () => {
     expect(formatDate({ 'date-parts': [[2024, 3, 9]] }, dateConfig(L, { form: 'numeric' }))).toBe('03/09/2024') // en-US's
   })
 
+  it('joins a non-localized date\'s parts with its own delimiter', () => {
+    const L = localize(FR, EN)
+    const cfg = dateConfig(L, { delimiter: ' ', parts: [{ name: 'day' }, { name: 'month' }, { name: 'year' }] })
+    expect(formatDate({ 'date-parts': [[2024, 3, 1]] }, cfg)).toBe('1 mars 2024')
+  })
+
   it('keeps a non-localized date\'s own parts, with the locale\'s month names', () => {
     const L = localize(FR, EN)
     const cfg = dateConfig(L, { parts: [{ name: 'year' }, { name: 'month', prefix: ', ' }, { name: 'day', prefix: ' ', form: 'ordinal' }] })

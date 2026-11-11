@@ -587,7 +587,7 @@ export declare function dayOrdinal(locale: ResolvedLocale, day: number, month?: 
 /** The formatDate configuration for one of a style's <date> elements, in a resolved locale */
 export declare function dateConfig(
   locale: ResolvedLocale,
-  spec: { form?: string; dp?: string; parts?: DateFormatConfig['dateParts'] }
+  spec: { form?: string; dp?: string; delimiter?: string; parts?: DateFormatConfig['dateParts'] }
 ): DateFormatConfig
 
 // ---------------------------------------------------------------------------
