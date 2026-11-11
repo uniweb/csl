@@ -1,6 +1,6 @@
 {
   "name": "@citestyle/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared runtime helpers for compiled CSL styles (~6-8KB)",
   "author": "Uniweb",
   "homepage": "https://github.com/uniweb/csl/tree/main/packages/core",
