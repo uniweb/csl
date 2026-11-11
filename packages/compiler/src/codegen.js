@@ -255,8 +255,8 @@ function _extractLinks(item) {
 function _normalizePunctuation(str) {
   if (!str) return ''
   // F matches PUA tokens (formatting U+E000-E007 and semantic U+E020-E022) that may appear between dots
-  const F = '[\\uE000-\\uE007\\uE020-\\uE022]*'
-  return str
+  const F = '[\\uE000-\\uE007\\uE020-\\uE022]*'${quoteMove(ctx)}
+  return str${quoteMove(ctx) ? QUOTE_MOVE_REPLACES : ''}
     .replace(new RegExp('([.!?])(' + F + ')\\\\. ', 'g'), '$1$2 ')
     .replace(new RegExp('\\\\.(' + F + ')\\\\.', 'g'), '.$1')
     .replace(/ +/g, ' ')
@@ -264,6 +264,34 @@ function _normalizePunctuation(str) {
 }
 ${sortCode}`
 }
+
+// ── Punctuation inside a closing quote ───────────────────────────────────────
+
+/**
+ * The declaration a bibliography's `_normalizePunctuation` needs to move a period or comma inside
+ * a closing quote, when the locale says so (CSL `punctuation-in-quote`, which en-US sets): `Q`,
+ * a character class of the locale's closing quotes. Empty when the locale keeps them outside.
+ * ⛔ The option was parsed and never applied, so MLA and Chicago in English printed
+ * `“A Title”.` where they write `“A Title.”`
+ *
+ * @param {object} ctx - the codegen context, holding the resolved locale
+ * @returns {string} generated code, or ''
+ */
+function quoteMove(ctx) {
+  if (!ctx.locale?.styleOptions?.punctuationInQuote) return ''
+  const text = (term) => (typeof term === 'string' ? term : term?.single || '')
+  const closing = [text(ctx.locale.terms?.['close-quote']) || '”', text(ctx.locale.terms?.['close-inner-quote']) || '’']
+  const charClass = '[' + [...new Set(closing.join(''))].map((c) => (/[\]\\^-]/.test(c) ? '\\' + c : c)).join('') + ']'
+  return `\n  const Q = ${JSON.stringify(charClass)}`
+}
+
+/**
+ * Generated `.replace` calls: a period or comma after a closing quote moves inside it, and one that
+ * then follows the quote's own ending (`Why?.”`, `A study..”`) is dropped, as CSL renders it.
+ */
+const QUOTE_MOVE_REPLACES = `
+    .replace(new RegExp('(' + Q + ')(' + F + ')([.,])', 'g'), '$3$1$2')
+    .replace(new RegExp('([.!?])(' + F + ')([.,])(' + F + ')(' + Q + ')', 'g'), '$1$2$4$5')`
 
 // ── Citation generation ──────────────────────────────────────────────────────
 
@@ -844,7 +872,9 @@ function applyTextCase(expr, textCase) {
 function applyFormatting(expr, node) {
   // CSL rendering order: quotes → font formatting → display
   if (node.quotes) {
-    expr = `(${expr} ? '\u201c' + ${expr} + '\u201d' : '')`
+    // The locale's own quotation marks (de-DE \u201e\u2026\u201c, en-US \u201c\u2026\u201d), from the compiled terms. \u26d4 They
+    // were English curly quotes in every locale.
+    expr = `(${expr} ? (T['open-quote'] || '\u201c') + ${expr} + (T['close-quote'] || '\u201d') : '')`
   }
   // Formatting tokens — PUA characters converted to HTML tags by toHtml()
   if (node.fontStyle === 'italic') {

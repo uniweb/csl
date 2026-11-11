@@ -10,8 +10,8 @@ const fixturesDir = join(__dirname, '..', '..', '..', 'test', 'fixtures')
 /**
  * Helper: compile a CSL string and evaluate the resulting module.
  */
-async function compileAndEval(cslXml) {
-  const { code } = compile(cslXml)
+async function compileAndEval(cslXml, options) {
+  const { code } = compile(cslXml, options)
   const corePath = join(__dirname, '..', '..', 'core', 'src', 'index.js')
   const adjustedCode = code.replace("'@citestyle/core'", `'${corePath}'`)
   const tmpDir = join(__dirname, '..', '..', '..', 'test', '.tmp')
@@ -82,8 +82,8 @@ describe('MLA 9th edition', () => {
     // MLA uses full names, first author inverted
     expect(bib.text).toContain('Smith, John Andrew')
     expect(bib.text).toContain('and Barbara Carol Jones')
-    // Title in quotes, title case
-    expect(bib.text).toMatch(/\u201cNeural Correlates of Consciousness\u201d/)
+    // Title in quotes, title case — and in US English the period goes inside the closing quote
+    expect(bib.text).toMatch(/\u201cNeural Correlates of Consciousness\.\u201d/)
     // Container title italic (check in HTML)
     expect(bib.html).toContain('<i>Nature Neuroscience</i>')
     // DOI as link
@@ -126,9 +126,9 @@ describe('Chicago Author-Date 18th edition', () => {
 
   it('formats article-journal (year after author, quoted title)', () => {
     const bib = style.bibliography(article)
-    // Chicago: Author. Year. "Title". Container Volume (Issue): Pages
+    // Chicago: Author. Year. "Title." Container Volume (Issue): Pages — the period inside, US English
     expect(bib.text).toMatch(/Smith.*2024/)
-    expect(bib.text).toMatch(/\u201cNeural Correlates of Consciousness\u201d/)
+    expect(bib.text).toMatch(/\u201cNeural Correlates of Consciousness\.\u201d/)
     expect(bib.html).toContain('<i>Nature Neuroscience</i>')
     // Chicago-16 page range (no abbreviation for this range)
     expect(bib.text).toContain('45\u201367')
@@ -173,8 +173,8 @@ describe('IEEE', () => {
     // IEEE: initials before family, no inversion
     expect(bib.text).toContain('J. A. Smith')
     expect(bib.text).toContain('B. C. Jones')
-    // Quoted title
-    expect(bib.text).toMatch(/\u201cNeural correlates of consciousness\u201d/)
+    // Quoted title, the comma inside the closing quote (US English)
+    expect(bib.text).toMatch(/\u201cNeural correlates of consciousness,\u201d/)
     // Italic container
     expect(bib.html).toContain('<i>Nature Neuroscience</i>')
   })
@@ -359,7 +359,24 @@ describe('Harvard - Cite Them Right 12th edition', () => {
   it('formats article-journal bibliography', () => {
     const bib = style.bibliography(article)
     expect(bib.text).toBe(
-      'Smith, J. A. and Jones, B. C. (2024) \u201cNeural correlates of consciousness\u201d, Nature Neuroscience, 27(3), pp. 45-67. Available at: https://doi.org/10.1038/nn.2024.'
+      'Smith, J. A. and Jones, B. C. (2024) \u201cNeural correlates of consciousness,\u201d Nature Neuroscience, 27(3), pp. 45-67. Available at: https://doi.org/10.1038/nn.2024.'
+    )
+  })
+
+  // The style names no default locale, so it renders in the processor's: US English above. Its own
+  // en-GB block, the locale's single quotes and its punctuation outside them apply in British English.
+  it('a locale asked for wins over a style\'s own default-locale', async () => {
+    const mla = readFileSync(join(fixturesDir, 'mla.csl'), 'utf-8') // default-locale="en-US"
+    const german = await compileAndEval(mla, { locale: 'de-DE' })
+    expect(german.bibliography(article).text).toContain('Smith, John Andrew, und Barbara Carol Jones')
+    expect(german.bibliography(article).text).toContain('\u201eNeural Correlates of Consciousness\u201c')
+  })
+
+  it('formats article-journal bibliography in British English (en-GB)', async () => {
+    const csl = readFileSync(join(fixturesDir, 'harvard.csl'), 'utf-8')
+    const british = await compileAndEval(csl, { locale: 'en-GB' })
+    expect(british.bibliography(article).text).toBe(
+      'Smith, J. A. and Jones, B. C. (2024) \u2018Neural correlates of consciousness\u2019, Nature Neuroscience, 27(3), pp. 45-67. Available at: https://doi.org/10.1038/nn.2024.'
     )
   })
 

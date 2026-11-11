@@ -45,7 +45,8 @@ Commands:
 
 Options (compile):
   -o, --output <path>   Output file (single input) or directory (batch mode)
-  --locale <lang>       Target locale, comma-separated for multi-locale (default: en-US)
+  --locale <lang>       Target locale, comma-separated for multi-locale (default: the style's
+                        default-locale, else en-US)
   --format <esm|cjs>    Output format (default: esm)
 
 Examples:
@@ -186,7 +187,8 @@ function parseArgs(args) {
     }
   }
 
-  const locales = localeStr ? localeStr.split(',').map(s => s.trim()) : ['en-US']
+  // No --locale: one run in the style's own default-locale (en-US when it names none)
+  const locales = localeStr ? localeStr.split(',').map(s => s.trim()) : [null]
 
   return { inputs, output, locales, format }
 }
