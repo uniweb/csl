@@ -58,7 +58,7 @@ The same approach behind Tailwind CSS (utility classes → optimized CSS) and Gr
 
 **Tree-shaking at two levels.** Each compiled style is a standalone ES module. Import APA and not MLA → MLA is never in your bundle. But it goes deeper: each compiled style only imports the specific core helpers it uses. A style with no date formatting doesn't pull in `formatDate`. An interpreter can't do this — it must ship the entire formatting engine because it doesn't know which style will be loaded at runtime. The shared runtime is ~6-8KB; each compiled style adds ~3-5KB. Your first style ships in ~9-13KB total.
 
-**Locale terms inlined as constants.** An interpreter loads locale XML (~20KB) as a separate file at runtime — month names, ordinal suffixes, "et al.", "and", punctuation rules. Citestyle resolves all locale terms at compile time and inlines them as string constants. No runtime locale loading, no extra file to fetch. A compiled style for en-US has the terms literally in the code.
+**Locale terms as data.** An interpreter loads locale XML (~20KB) as a separate file at runtime — month names, ordinal suffixes, "et al.", "and", punctuation rules. A compiled style carries the en-US terms it can reach and its own `<locale>` data, so it formats in its default locale with no locale loading at all. For another language, pass a locale pack (`citestyle/locales/fr-FR`, ~3-4KB gzipped): plain data, imported like any module, resolved once.
 
 **Pure functions.** `format(style, item)` has no side effects, no global state, no initialization step. Same input, same output. Works in browsers, Node, edge functions, workers, SSR — anywhere JavaScript runs. The registry is the only stateful piece, and it's opt-in for when you need cross-reference features.
 
@@ -119,6 +119,26 @@ const cite = registry.cite([{ id: 'smith2024' }, { id: 'jones2023' }])
 ```
 
 The registry handles year-suffix assignment, name disambiguation (5 rules), bibliography sorting, citation numbering for numeric styles, cite collapsing (`[1-3]` instead of `[1, 2, 3]`), and subsequent-author-substitute. When you don't need these features, `format()` and `formatAll()` are simpler.
+
+### Format in another language
+
+```javascript
+import { format, createRegistry } from 'citestyle'
+import * as apa from 'citestyle/styles/apa'
+import fr from 'citestyle/locales/fr-FR'
+
+const book = {
+  type: 'book', title: 'The art of computer programming', author: [{ family: 'Knuth', given: 'Donald Ervin' }],
+  issued: { 'date-parts': [[1997]] }, publisher: 'Addison-Wesley', edition: '3', volume: '1',
+}
+
+format(apa, book, { locale: fr }).text
+// → Knuth, D. E. (1997). The art of computer programming (3ᵉ éd., Vol. 1). Addison-Wesley.
+
+const registry = createRegistry(apa, { locale: fr })
+```
+
+Every official CSL locale is there: `citestyle/locales/de-DE`, `citestyle/locales/pt-BR`, `citestyle/locales/ja-JP`… A language code names its primary dialect (`citestyle/locales/fr` is fr-FR). Terms, ordinals, dates, quotation marks and punctuation follow the pack, with CSL's locale fallback. See [`@citestyle/locales`](https://www.npmjs.com/package/@citestyle/locales).
 
 ### Import from BibTeX
 
@@ -208,6 +228,7 @@ CSL spec coverage is comprehensive for web use cases — the complete rendering 
 | [`@citestyle/core`](https://www.npmjs.com/package/@citestyle/core) | Shared formatting runtime (~6-8KB) | Building a custom formatter on the low-level API |
 | [`@citestyle/registry`](https://www.npmjs.com/package/@citestyle/registry) | Citation state (~5-8KB) | Need the registry without BibTeX parsing |
 | [`@citestyle/styles`](https://www.npmjs.com/package/@citestyle/styles) | 9 pre-compiled styles (~3-5KB each) | Only need styles + core, nothing else |
+| [`@citestyle/locales`](https://www.npmjs.com/package/@citestyle/locales) | A locale pack per CSL locale (~3-4KB gzipped each) | Serving packs as static JSON files |
 | [`@citestyle/bibtex`](https://www.npmjs.com/package/@citestyle/bibtex) | BibTeX ↔ CSL-JSON | Only need BibTeX conversion |
 | [`@citestyle/ris`](https://www.npmjs.com/package/@citestyle/ris) | RIS ↔ CSL-JSON | Working with PubMed/RIS data |
 | [`@citestyle/compiler`](https://www.npmjs.com/package/@citestyle/compiler) | CSL XML → JS compiler | Compiling custom `.csl` files |
@@ -220,7 +241,7 @@ CSL spec coverage is comprehensive for web use cases — the complete rendering 
 │                    BUILD TIME                       │
 │                                                     │
 │  apa.csl ──→ Citestyle Compiler ──→ apa.js (~3-5KB) │
-│  Locale terms resolved and inlined as constants     │
+│  en-US terms inlined; locale packs at format time   │
 └─────────────────────────────────────────────────────┘
                         │
                         ▼
@@ -248,4 +269,4 @@ CSL spec coverage is comprehensive for web use cases — the complete rendering 
 
 ## License
 
-MIT
+MIT. The locale packs come from the [CSL project](https://citationstyles.org/)'s locale files and are licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).

@@ -146,6 +146,28 @@ const cite = formatCitation(apa, [{ item, locator: '42', label: 'page' }])
 // → { html, text }
 ```
 
+### Format in another language
+
+A compiled style formats in its default locale. For another language, pass a locale pack from [`@citestyle/locales`](./packages/locales), one module per official CSL locale (~3-4KB gzipped):
+
+```javascript
+import { format, createRegistry } from '@citestyle/registry'
+import * as apa from '@citestyle/styles/apa'
+import fr from '@citestyle/locales/fr-FR'
+
+const book = {
+  type: 'book', title: 'The art of computer programming', author: [{ family: 'Knuth', given: 'Donald Ervin' }],
+  issued: { 'date-parts': [[1997]] }, publisher: 'Addison-Wesley', edition: '3', volume: '1',
+}
+
+format(apa, book, { locale: fr }).text
+// → Knuth, D. E. (1997). The art of computer programming (3ᵉ éd., Vol. 1). Addison-Wesley.
+
+const registry = createRegistry(apa, { locale: fr }) // every entry and citation in French
+```
+
+Terms, ordinals, month names, date formats, quotation marks (« » with French spacing) and punctuation-in-quote all come from the pack, with CSL's locale fallback: the style's own `<locale>` elements win over the pack, and the pack over en-US.
+
 ### Compile a custom style
 
 ```bash
@@ -211,7 +233,7 @@ const result = validateItem(item)
 │  apa.csl ──→ Citestyle Compiler ──→ apa.js           │
 │  mla.csl ──→ Citestyle Compiler ──→ mla.js           │
 │                                                      │
-│  Locale terms inlined as string constants            │
+│  en-US terms inlined; other languages: locale packs  │
 └─────────────────────────────────────────────────────┘
                         │
                         ▼
@@ -246,6 +268,7 @@ const result = validateItem(item)
 | [`@citestyle/core`](./packages/core) | Shared runtime helpers (names, dates, text-case, HTML) | ~6-8KB |
 | [`@citestyle/registry`](./packages/registry) | Citation state (numbering, sorting, disambiguation) | ~5-8KB |
 | [`@citestyle/styles`](./packages/styles) | 10 pre-compiled popular styles | ~3-5KB each |
+| [`@citestyle/locales`](./packages/locales) | One locale pack per official CSL locale, chosen at format time | ~3-4KB gzipped each |
 | [`@citestyle/bibtex`](./packages/bibtex) | BibTeX ↔ CSL-JSON parser/serializer | Optional |
 | [`@citestyle/ris`](./packages/ris) | RIS ↔ CSL-JSON parser/serializer | Optional |
 | [`@citestyle/types`](./packages/types) | TypeScript type definitions | Dev dependency |
@@ -261,13 +284,13 @@ The compiler reads a `.csl` XML file and emits a JavaScript module. Every CSL co
 | `<names variable="author">` | `formatNames(item.author, { /* config baked in */ })` |
 | `<group delimiter=", ">` | Array collect → filter empties → join |
 | `<text variable="title" font-style="italic">` | `<i>${escapeHtml(item.title)}</i>` |
-| Locale terms (`"et al."`, month names) | Inlined string constants |
+| Locale terms (`"et al."`, month names) | Read at format time: the en-US terms the style can reach are inlined, a locale pack supplies another language's |
 
 The compiled module exports `bibliography()`, `citation()`, and `bibliographySort()` — pure functions that take CSL-JSON items and return structured output. No XML. No interpretation. Just function calls.
 
 ## CSL coverage
 
-**Full support**: text, conditionals, macros, groups (with suppression), names (et-al, particles, ordering, substitute, name-part formatting), dates (localized, ranges, seasons), numbers (ordinal, roman), labels, formatting (italic, bold, small-caps, underline), affixes, text-case (with nocase span protection), sorting, page ranges, year suffixes, subsequent-author-substitute, name disambiguation (5 rules), cite collapsing (numeric + author-date), BibTeX/RIS import/export. 20 styles compile and pass integration tests; 44 styles stress-tested.
+**Full support**: text, conditionals, macros, groups (with suppression), names (et-al, particles, ordering, substitute, name-part formatting), dates (localized, ranges, seasons), numbers (ordinal, roman), locales (every official CSL locale, chosen at format time, with CSL's locale fallback and gender-specific ordinals), labels, formatting (italic, bold, small-caps, underline), affixes, text-case (with nocase span protection), sorting, page ranges, year suffixes, subsequent-author-substitute, name disambiguation (5 rules), cite collapsing (numeric + author-date), BibTeX/RIS import/export. 20 styles compile and pass integration tests; 44 styles stress-tested.
 
 **Deferred** (low value for web): ibid/subsequent position, near-note distance, CSL-M extensions. These are footnote-centric features — on the web, links resolve ambiguity and footnote styles are rare.
 
@@ -289,4 +312,4 @@ The architecture is modular — pick a package and dive in:
 
 ## License
 
-MIT
+MIT. The locale data in `@citestyle/locales` comes from the [CSL project](https://citationstyles.org/) and is licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/); see its [README](./packages/locales/README.md#source-and-license).

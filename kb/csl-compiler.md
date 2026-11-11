@@ -437,7 +437,7 @@ These constructs compile to efficient JS and cover the vast majority of real-wor
 | **Display** | `display="block"`, `"indent"`, etc. | CSS class mapping |
 | **Sorting** | `cs:sort`, `cs:key` | Compiled comparator function |
 | **Locale terms** | `cs:term` (with form, plural) | Inlined string constants |
-| **Locale fallback** | Style → locale file → en-US | Resolved at compile time |
+| **Locale fallback** | Style → locale file → en-US | The default locale resolved at compile time; a locale pack at format time, with CSL's precedence |
 | **Inheritable name options** | Global → citation/bibliography → names | Resolved at compile time (flattened) |
 | **Page ranges** | `page-range-format` | Chicago/expanded/minimal algorithms |
 | **Year suffixes** | `disambiguate-add-year-suffix` | Registry feature (runtime) |
@@ -967,7 +967,7 @@ const terms = {
 }
 ```
 
-Multi-locale support: compile the same style for multiple locales, import the one you need.
+Other languages: since format-time locales, a style inlines only the en-US terms it can reach (with its own `<locale>` elements and its default resolution), and takes a locale pack from `@citestyle/locales` as `ctx.locale` when formatting — one compiled style for every language. See Open Question 2.
 
 ### Why structured output instead of just strings?
 
@@ -1053,7 +1053,7 @@ Starting with the 80% that serves 99% of web use cases gets a useful tool into d
 
 1. ~~**Package scope naming**~~ — **Resolved.** Published under `@citestyle/*` on npm. Repository at `github.com/uniweb/csl`. The hybrid approach: engine packages (`compiler`, `core`, `registry`, `styles`) under `@citestyle/*`; `@uniweb/scholar` remains the React/Uniweb integration layer that imports from them.
 
-2. **Locale bundling strategy** — Inlining locale terms produces the smallest, fastest output but means a separate compiled module per locale. For multilingual sites that switch locales at runtime (e.g., a bilingual CV), options include: (a) compile separate modules per locale, lazy-load the active one; (b) compile a multi-locale variant that accepts a locale parameter and carries a small lookup table (~1-2KB per additional locale); (c) hybrid — inline the primary locale, fetch secondary locale terms at runtime from `@citestyle/locales`. The CLI could support `--locale en-US,fr-FR` to produce multi-locale bundles. Decision should be informed by real usage patterns.
+2. ~~**Locale bundling strategy**~~ — **Resolved: (c).** A compiled style inlines the en-US terms it can reach and its default resolution, and reads every locale-dependent value at format time from a resolved locale; `@citestyle/locales` ships one pack per official CSL locale (also as static JSON, `locales/v1/<lang>.json`), passed as `{ locale }` and merged over the style's data once, with CSL 1.0.2's fallback. A call with no locale formats exactly as before (`test/no-locale.test.js`). The question as it stood: inlining locale terms produces the smallest, fastest output but means a separate compiled module per locale. For multilingual sites that switch locales at runtime (e.g., a bilingual CV), options include: (a) compile separate modules per locale, lazy-load the active one; (b) compile a multi-locale variant that accepts a locale parameter and carries a small lookup table (~1-2KB per additional locale); (c) hybrid — inline the primary locale, fetch secondary locale terms at runtime from `@citestyle/locales`. The CLI could support `--locale en-US,fr-FR` to produce multi-locale bundles. Decision should be informed by real usage patterns.
 
 3. **Custom CSL styles** — Some institutions have custom `.csl` files. The compiler handles these automatically (that's the point), but we should document the workflow: download `.csl` → compile → import.
 

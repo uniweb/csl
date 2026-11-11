@@ -86,6 +86,26 @@ bibliography.forEach(entry => {
 })
 ```
 
+### In another language
+
+Each style formats in every official CSL language: pass a locale pack from [`@citestyle/locales`](../locales).
+
+```javascript
+import { format } from '@citestyle/registry'
+import * as apa from '@citestyle/styles/apa'
+import de from '@citestyle/locales/de-DE'
+
+const book = {
+  type: 'book', title: 'The art of computer programming', author: [{ family: 'Knuth', given: 'Donald Ervin' }],
+  issued: { 'date-parts': [[1997]] }, publisher: 'Addison-Wesley', edition: '3', volume: '1',
+}
+
+format(apa, book, { locale: de }).text
+// Knuth, D. E. (1997). The art of computer programming (3. Aufl., Bd. 1). Addison-Wesley.
+```
+
+Terms ("und", "Hrsg.", "S."), ordinals ("2. Aufl."), month names, date formats and quotation marks („…“) follow the pack. Without `locale`, a style formats in its default locale, as before.
+
 ### Direct function calls (no registry, no helpers)
 
 Every style module exports `bibliography()` and `citation()` as pure functions:

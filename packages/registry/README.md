@@ -105,6 +105,16 @@ Create a new registry bound to a compiled style.
 
 - `style` — A compiled style module (from `@citestyle/styles/*` or your own compiled `.js`)
 - `options.subsequentAuthorSubstitute` (string) — Override the style's substitute string (e.g., `"---"`)
+- `options.locale` — A locale pack from [`@citestyle/locales`](../locales): every citation, bibliography entry and sort key is formatted in its language, and disambiguation compares citations as that language renders them. Without one, the style's default locale.
+
+```javascript
+import fr from '@citestyle/locales/fr-FR'
+
+const registry = createRegistry(apa, { locale: fr })
+registry.getBibliography()              // in French
+registry.cite([{ id: 'smith2024' }])    // in French
+registry.cite([{ id: 'smith2024' }], { locale: null })  // in the style's default locale
+```
 
 ### `registry.addItems(items)`
 
@@ -116,7 +126,7 @@ Look up a single item by ID. Returns `undefined` if not found.
 
 ### `registry.cite(cites, ctx?)`
 
-Format a citation cluster. Each cite can include:
+Format a citation cluster, in `ctx.locale` if given, else the registry's locale. Each cite can include:
 
 | Property | Type | Description |
 |---|---|---|
@@ -131,7 +141,7 @@ Returns `{ text: string, html: string }`.
 
 ### `registry.getBibliography(ctx?)`
 
-Get the full formatted bibliography. Items are sorted per the style's sort rules. Returns an array of `FormattedEntry` objects:
+Get the full formatted bibliography, in `ctx.locale` if given, else the registry's locale. Items are sorted per the style's sort rules. Returns an array of `FormattedEntry` objects:
 
 ```javascript
 {
@@ -148,11 +158,11 @@ Read-only property: number of items in the registry.
 
 ### `format(style, item, ctx?)`
 
-Format a single bibliography entry without a registry. Returns `{ text, html, parts, links }`.
+Format a single bibliography entry without a registry. Returns `{ text, html, parts, links }`. Pass `{ locale }`, a pack from `@citestyle/locales`, to format in another language; the same goes for `formatAll` and `formatCitation`.
 
 ### `formatAll(style, items, ctx?)`
 
-Format multiple bibliography entries. Applies the style's sort order and assigns citation numbers. Returns an array of `{ text, html, parts, links }`.
+Format multiple bibliography entries. Applies the style's sort order (its sort keys in `ctx.locale`) and assigns citation numbers. Returns an array of `{ text, html, parts, links }`.
 
 ### `formatCitation(style, cites, ctx?)`
 

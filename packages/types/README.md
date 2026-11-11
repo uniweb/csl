@@ -37,14 +37,16 @@ npm install -D @citestyle/types
 | `Registry` | Registry interface: `addItems()`, `getItem()`, `cite()`, `getBibliography()`, `size` |
 | `RegistryOptions` | Options for `createRegistry()`: `subsequentAuthorSubstitute` |
 | `CiteRef` | A citation reference: `id`, `item`, `locator`, `label`, `prefix`, `suffix` |
-| `FormatContext` | Runtime context passed to style functions: `_secOpts`, `_disambig` |
+| `FormatContext` | Runtime context passed to style functions: `locale` (a `LocalePack`), and internally `_secOpts`, `_disambig` |
+| `LocalePack` | A locale pack from `@citestyle/locales`: `version`, `lang`, `terms`, `variants`, `match`, `genders`, `dates`, `options` |
+| `ResolvedLocale` | A pack resolved for a style by `localize()` (internal shape) |
 | `DisambiguationContext` | Per-cite disambiguation state: `addNames`, `addGivenname`, `givenname` |
 
 ### Compiler
 
 | Type | Description |
 |---|---|
-| `CompileOptions` | Options for `compile()`: `locale`, `format` |
+| `CompileOptions` | Options for `compile()`: `locale` (the style's default locale), `format` |
 | `CompileResult` | Compiler output: `{ code, meta }` |
 
 ### Formatting helpers

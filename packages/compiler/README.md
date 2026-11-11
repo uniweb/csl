@@ -18,14 +18,14 @@ npm install -D @citestyle/compiler
 # Compile to a file
 npx citestyle compile apa.csl -o apa.js
 
-# Compile with a specific locale
-npx citestyle compile apa.csl --locale fr-FR -o apa-fr.js
+# Compile with another default locale (the compiler ships en-US, en-GB, de-DE, pt-BR)
+npx citestyle compile apa.csl --locale de-DE -o apa-de.js
 
 # Batch compile every .csl file in a directory
 npx citestyle compile styles/*.csl -o dist/
 
 # Multi-locale (one output file per locale)
-npx citestyle compile apa.csl --locale en-US,fr-FR -o dist/
+npx citestyle compile apa.csl --locale en-US,de-DE -o dist/
 
 # CommonJS output
 npx citestyle compile apa.csl --format cjs -o apa.cjs
@@ -49,7 +49,7 @@ npx citestyle check styles/*.csl
 | Option | Description | Default |
 |---|---|---|
 | `-o, --output <path>` | Output file or directory | stdout |
-| `--locale <lang>` | Target locale(s), comma-separated | `en-US` |
+| `--locale <lang>` | The style's default locale(s), comma-separated: what it formats with when no locale pack is passed | The style's `default-locale`, else `en-US` |
 | `--format <esm\|cjs>` | Output module format | `esm` |
 
 ## Using a compiled style
@@ -73,7 +73,7 @@ const item = {
 
 // Bibliography entry — returns structured output, not a flat string
 const entry = apa.bibliography(item)
-entry.text  // Smith, J. (2024). Deep learning for citation analysis. Nature, 620, 100–108.
+entry.text  // Smith, J. (2024). Deep learning for citation analysis. Nature, 620, 100–108. https://doi.org/10.1038/example
 entry.html  // Semantic HTML with <i>, CSS classes (.csl-author, .csl-title, ...), linked DOI
 entry.parts // { authors, year, title, container, doi, ... }
 entry.links // { doi: 'https://doi.org/10.1038/example' }
@@ -89,10 +89,25 @@ apa.meta.class  // "in-text"
 
 For documents with multiple citations (where you need numbering, disambiguation, and sorting), use [`@citestyle/registry`](../registry).
 
+### In another language
+
+One compiled style formats in every language. Pass a locale pack from [`@citestyle/locales`](../locales) as `locale`:
+
+```javascript
+import fr from '@citestyle/locales/fr-FR'
+
+apa.bibliography(item, { locale: fr }).text
+// Smith, J. (2024). Deep learning for citation analysis. Nature, 620, 100‑108. https://doi.org/10.1038/example
+apa.citation([{ item }], { locale: fr })
+items.sort((a, b) => apa.bibliographySort(a, b, { locale: fr })) // sort keys in French too
+```
+
+The style resolves the pack once (CSL's locale fallback: its own `<locale>` elements over the pack, the pack over en-US) and keeps the result. Without `locale` it formats in its default locale, which `--locale` sets at compile time.
+
 ## Programmatic API
 
 ```javascript
-import { compile, parse, resolveLocale, generate } from '@citestyle/compiler'
+import { compile, parse, resolveLocale, generate, readLocaleFile, readLocaleLayer } from '@citestyle/compiler'
 ```
 
 ### `compile(cslXml, options?)`
@@ -113,7 +128,7 @@ console.log(meta.class) // "in-text"
 ```
 
 **Options:**
-- `locale` (string) — Target locale (default: style's default or `'en-US'`)
+- `locale` (string) — The style's default locale, inlined as what it formats with when no locale pack is passed (default: the style's `default-locale`, else `'en-US'`)
 - `format` (`'esm'` | `'cjs'`) — Output format (default: `'esm'`)
 
 **Returns:** `{ code: string, meta: { id, title, class, version, defaultLocale } }`
@@ -130,7 +145,7 @@ console.log(Object.keys(ast.macros))
 
 ### `resolveLocale(locale, overrides?)`
 
-Resolve locale data by merging: style-level term overrides → locale XML file → en-US fallback.
+Resolve the style's default locale at compile time by merging: style-level term overrides → locale XML file → en-US fallback.
 
 ```javascript
 const locale = resolveLocale('fr-FR', ast.localeOverrides)
@@ -146,6 +161,15 @@ const locale = resolveLocale('en-US', ast.localeOverrides)
 const code = generate(ast, locale, { format: 'esm' })
 ```
 
+### `readLocaleFile(xml)` and `readLocaleLayer(element)`
+
+Read a CSL locale file, or a `<locale>` DOM element, into a locale layer: the data a style reads at format time, in the shape of an `@citestyle/locales` pack (terms exactly as written, gender-form variants, `match`, nouns' genders, date formats, options). `readLocaleFile` also returns the file's translators, rights and update date.
+
+```javascript
+const { layer, info } = readLocaleFile(readFileSync('locales-fr-FR.xml', 'utf-8'))
+layer.terms['open-quote'] // "« "
+```
+
 ## What gets compiled
 
 Every CSL construct maps directly to JavaScript:
@@ -156,9 +180,9 @@ Every CSL construct maps directly to JavaScript:
 | `<choose><if type="article-journal">` | `if (item.type === 'article-journal')` |
 | `<names variable="author">` | `formatNames(item.author, { /* config baked in */ })` |
 | `<group delimiter=", ">` | Array collect → filter empties → join |
-| Locale terms (`"et al."`, `"Retrieved from"`) | Inlined string constants |
+| Locale terms (`"et al."`, `"Retrieved from"`) | Read at format time: the en-US terms the style can reach, its own `<locale>` elements and its default resolution are inlined as data |
 
-The result is a module that exports `bibliography()`, `citation()`, `bibliographySort()`, and `meta` — pure functions with no XML, no interpretation, and no runtime locale resolution.
+The result is a module that exports `bibliography()`, `citation()`, `bibliographySort()`, and `meta` — pure functions with no XML and no interpretation. A locale pack passed at format time is merged over the style's locale data once and cached.
 
 ## Compatibility
 

@@ -101,16 +101,17 @@ applyTextCase('<span class="nocase">iPhone</span> sales', 'uppercase')
 import { ordinal, longOrdinal, roman } from '@citestyle/core'
 
 ordinal(3)       // "3rd"
-ordinal(1, 'fr') // "1re" (locale-aware)
 longOrdinal(2)   // "second"
 roman(14)        // "xiv"
 ```
 
+For ordinals in another language, with the gender of the noun they count, see `formatOrdinal` under [Locales](#locales).
+
 ### Page ranges
 
-#### `pageRange(pages, format?)`
+#### `pageRange(pages, format?, delimiter?)`
 
-Format page ranges per CSL `page-range-format` rules.
+Format page ranges per CSL `page-range-format` rules. `delimiter` is the locale's `page-range-delimiter` term (an en-dash by default; French uses a non-breaking hyphen).
 
 ```javascript
 import { pageRange } from '@citestyle/core'
@@ -119,6 +120,18 @@ pageRange('321-328', 'chicago')  // "321–28"   (en-dash, Chicago-style abbrevi
 pageRange('321-328', 'minimal')  // "321–8"    (en-dash, minimal abbreviation)
 pageRange('321-328', 'expanded') // "321–328"  (en-dash, no abbreviation)
 ```
+
+### Locales
+
+Compiled styles read every locale-dependent value — terms, ordinals, month names, date formats, quotation marks, punctuation-in-quote — from a resolved locale at format time. These helpers build and read one. You need them only to write a formatter of your own: a compiled style calls them itself when it is given a pack from [`@citestyle/locales`](../locales).
+
+- **`localize(pack, base, own?)`** — Resolve a locale pack with CSL 1.0.2's locale fallback: `base` (the en-US data a style carries), then the pack, then the style's own `<locale>` layers by `xml:lang` (`''`, the language, the dialect). Returns `null`, with a console warning the first time, for a pack whose `version` isn't `LOCALE_FORMAT`.
+- **`getTerm(locale, key, plural?)`** — A term's text: `getTerm(fr, 'editor:short', true)`. A form the locale lacks falls back as CSL says (verb-short → verb → long, symbol → short → long).
+- **`formatOrdinal(locale, n, noun?, long?)`** — `"2nd"`, `"2ᵉ"`, `"2."`, or a long ordinal, in the gender of `noun` (`'edition'` is feminine in French: `"1ʳᵉ"`).
+- **`dayOrdinal(locale, day, month?)`** — A day as an ordinal, with the month's gender and `limit-day-ordinals-to-day-1` (French `"1ᵉʳ"`, `"2"`).
+- **`dateConfig(locale, spec)`** — The `formatDate` configuration for one of a style's `<date>` elements: a localized date takes the locale's format.
+- **`mergeLayers(lower, upper)`** — Merge two locale layers with CSL's rules: a term form is replaced on its own, with its gender; any ordinal suffix term replaces them all.
+- **`LOCALE_FORMAT`** — The pack format version these read: `1`.
 
 ### HTML output
 
