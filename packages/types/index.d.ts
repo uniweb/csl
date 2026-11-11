@@ -578,6 +578,9 @@ export declare function mergeLayers<T extends Partial<LocalePack>>(lower: T, upp
 /** A term's text in a resolved locale, singular or plural ("name" or "name:form") */
 export declare function getTerm(locale: ResolvedLocale, key: string, plural?: boolean): string
 
+/** A label's term for a variable's value, singular or plural as CSL's contextual plural says; '' for an empty value */
+export declare function labelTerm(locale: ResolvedLocale, key: string, value: unknown): string
+
 /** A number as an ordinal ("2nd", "2ᵉ") or long ordinal, with the gender of the noun it counts */
 export declare function formatOrdinal(locale: ResolvedLocale, n: number, noun?: string, long?: boolean): string
 

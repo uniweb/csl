@@ -17,6 +17,7 @@ export {
   localize,
   mergeLayers,
   getTerm,
+  labelTerm,
   formatOrdinal,
   dayOrdinal,
   dateConfig,

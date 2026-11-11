@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { localize, mergeLayers, getTerm, formatOrdinal, dayOrdinal, dateConfig, LOCALE_FORMAT } from '../src/locale.js'
+import { localize, mergeLayers, getTerm, labelTerm, formatOrdinal, dayOrdinal, dateConfig, LOCALE_FORMAT } from '../src/locale.js'
 import { formatDate } from '../src/dates.js'
 import { pageRange } from '../src/pages.js'
 
@@ -106,6 +106,20 @@ describe('localize: CSL 1.0.2 locale fallback', () => {
 
   it('refuses a string, which is not a pack', () => {
     expect(() => localize('fr-FR', EN)).toThrow(/the string "fr-FR"/)
+  })
+})
+
+describe('labelTerm', () => {
+  it('takes the plural for a range, a list, several names or a number other than 1', () => {
+    const L = localize({ version: 1, lang: 'xx-XX', terms: { 'page:short': { single: 'p.', multiple: 'pp.' }, 'editor:short': { single: 'ed.', multiple: 'eds.' } } }, EN)
+    expect(labelTerm(L, 'page:short', '42')).toBe('p.')
+    expect(labelTerm(L, 'page:short', '42-45')).toBe('pp.')
+    expect(labelTerm(L, 'page:short', '4, 9')).toBe('pp.')
+    expect(labelTerm(L, 'page:short', 2)).toBe('pp.')
+    expect(labelTerm(L, 'editor:short', [{ family: 'A' }])).toBe('ed.')
+    expect(labelTerm(L, 'editor:short', [{ family: 'A' }, { family: 'B' }])).toBe('eds.')
+    expect(labelTerm(L, 'editor:short', [])).toBe('')
+    expect(labelTerm(L, 'page:short', '')).toBe('')
   })
 })
 

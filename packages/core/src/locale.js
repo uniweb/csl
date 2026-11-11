@@ -163,6 +163,24 @@ export function getTerm(L, key, plural) {
   return typeof v === 'string' ? v : plural ? (v.multiple ?? v.single ?? '') : (v.single ?? '')
 }
 
+/**
+ * A `<label>`'s term for a variable's value, plural as CSL's contextual plural says: a list of more
+ * than one name, a number other than 1, or a value with a range or a list in it ("1-4", "2, 5").
+ * Nothing when the variable is empty.
+ *
+ * @param {object} L - a resolved locale
+ * @param {string} key - "name" or "name:form"
+ * @param {*} value - the variable's value
+ * @returns {string}
+ */
+export function labelTerm(L, key, value) {
+  if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) return ''
+  const plural = typeof value === 'string'
+    ? /[-,&]/.test(value) || /\d+\s*[-\u2013]\s*\d+/.test(value)
+    : Array.isArray(value) ? value.length > 1 : Number(value) !== 1
+  return getTerm(L, key, plural)
+}
+
 function formFallback(t, key) {
   const i = key.lastIndexOf(':')
   if (i < 0) return undefined

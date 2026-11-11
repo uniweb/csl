@@ -127,6 +127,7 @@ Compiled styles read every locale-dependent value — terms, ordinals, month nam
 
 - **`localize(pack, base, own?)`** — Resolve a locale pack with CSL 1.0.2's locale fallback: `base` (the en-US data a style carries), then the pack, then the style's own `<locale>` layers by `xml:lang` (`''`, the language, the dialect). Returns `null`, with a console warning the first time, for a pack whose `version` isn't `LOCALE_FORMAT`.
 - **`getTerm(locale, key, plural?)`** — A term's text: `getTerm(fr, 'editor:short', true)`. A form the locale lacks falls back as CSL says (verb-short → verb → long, symbol → short → long).
+- **`labelTerm(locale, key, value)`** — A `<label>`'s term for a variable's value, plural as CSL's contextual plural says (`'1-4'`, two names); empty for an empty value.
 - **`formatOrdinal(locale, n, noun?, long?)`** — `"2nd"`, `"2ᵉ"`, `"2."`, or a long ordinal, in the gender of `noun` (`'edition'` is feminine in French: `"1ʳᵉ"`).
 - **`dayOrdinal(locale, day, month?)`** — A day as an ordinal, with the month's gender and `limit-day-ordinals-to-day-1` (French `"1ᵉʳ"`, `"2"`).
 - **`dateConfig(locale, spec)`** — The `formatDate` configuration for one of a style's `<date>` elements: a localized date takes the locale's format.
