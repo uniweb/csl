@@ -25,7 +25,7 @@ Nobody has asked the question: **what if the style itself became the code?**
 | | Runtime interpreter (citeproc-js) | Compiled styles (this project) |
 |---|---|---|
 | **When work happens** | Every page load | Once at build time |
-| **Bundle cost** | ~120KB base + style XML + locale XML | ~3-5KB per compiled style |
+| **Bundle cost** | ~120KB base + style XML + locale XML | 3-22KB per compiled style, minified and gzipped (Nature to Chicago author-date) |
 | **Output** | Flat string | Structured HTML + parts + links |
 | **Tree-shaking** | Impossible (monolithic) | Natural (import only styles you use) |
 | **Style count** | Any (loads one style XML + engine per page) | Any — compiled on demand, no engine needed |
@@ -49,8 +49,8 @@ This is explicitly **not** targeting journal-submission formatting (where citepr
 ┌──────────────────────────────────────────────────────┐
 │                    BUILD TIME                          │
 │                                                        │
-│  apa.csl ──→ CSL Compiler ──→ apa.js (~3-5KB)        │
-│  mla.csl ──→ CSL Compiler ──→ mla.js (~3-5KB)        │
+│  apa.csl ──→ CSL Compiler ──→ apa.js (~15KB)         │
+│  mla.csl ──→ CSL Compiler ──→ mla.js (~9KB)          │
 │                    │                                   │
 │              Locale files ──→ inlined terms            │
 └──────────────────────────────────────────────────────┘

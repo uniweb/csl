@@ -31,13 +31,13 @@ Citation formatting on the web is stuck between two bad options:
 
 ### What you get
 
-**10x smaller bundles.** Your first style is ~9-13KB total (core + style). Each additional style adds ~3-5KB. Compare that to ~120KB for citeproc-js before you format a single citation.
+**Several times smaller bundles.** Minified and gzipped, your first style is 9-29KB with the shared core: about 9KB for a short style like Nature, 21KB for APA, 29KB for Chicago author-date. Each additional style adds 3-22KB. Compare that to ~120KB for citeproc-js before you format a single citation.
 
 | | citeproc-js | Citestyle |
 |---|---|---|
-| First style | ~120KB + locale XML | ~9-13KB (core + style) |
-| Each additional style | ~0 (shared engine) | ~3-5KB |
-| Total for 3 styles | ~120KB | ~15-23KB |
+| First style | ~120KB + locale XML | 9-29KB (core + style) |
+| Each additional style | ~0 (shared engine) | 3-22KB |
+| Total for 3 styles | ~120KB | 17-52KB |
 
 **Structured output.** Every other CSL processor returns a flat string. Citestyle gives you four representations of every formatted entry:
 
@@ -267,7 +267,7 @@ const result = validateItem(item)
 | [`@citestyle/compiler`](./packages/compiler) | CSL XML → JS compiler (build tool) | Dev dependency |
 | [`@citestyle/core`](./packages/core) | Shared runtime helpers (names, dates, text-case, HTML) | ~6-8KB |
 | [`@citestyle/registry`](./packages/registry) | Citation state (numbering, sorting, disambiguation) | ~5-8KB |
-| [`@citestyle/styles`](./packages/styles) | 10 pre-compiled popular styles | ~3-5KB each |
+| [`@citestyle/styles`](./packages/styles) | Nine pre-compiled popular styles | 3-22KB each |
 | [`@citestyle/locales`](./packages/locales) | One locale pack per official CSL locale, chosen at format time | ~3-4KB gzipped each |
 | [`@citestyle/bibtex`](./packages/bibtex) | BibTeX ↔ CSL-JSON parser/serializer | Optional |
 | [`@citestyle/ris`](./packages/ris) | RIS ↔ CSL-JSON parser/serializer | Optional |
