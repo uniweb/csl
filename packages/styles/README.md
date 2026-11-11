@@ -125,7 +125,7 @@ Every style exports a `meta` object with information from the CSL source:
 import * as apa from '@citestyle/styles/apa'
 
 apa.meta.id     // "apa"
-apa.meta.title  // "American Psychological Association 7th edition"
+apa.meta.title  // "APA Style 7th edition"
 apa.meta.class  // "in-text"
 ```
 
@@ -150,3 +150,21 @@ apa.meta.class  // "in-text"
   html: '...',    // HTML — <span class="csl-citation">...</span>
 }
 ```
+
+## Source and license
+
+Each style is the work of the [Citation Style Language](https://citationstyles.org/) project's contributors: a style from the official [CSL styles repository](https://github.com/citation-style-language/styles), compiled by [`@citestyle/compiler`](../compiler). The styles are licensed under the [Creative Commons Attribution-ShareAlike 3.0 Unported license](https://creativecommons.org/licenses/by-sa/3.0/) (CC BY-SA 3.0), and so are the modules compiled from them. Every module opens with its style's notice, in a `/*! … */` comment that minifiers keep: the style's title and link, its authors and contributors, and its rights.
+
+| Module | Style |
+|---|---|
+| `apa` | [APA Style 7th edition](http://www.zotero.org/styles/apa) |
+| `mla` | [MLA Handbook 9th edition (in-text citations)](http://www.zotero.org/styles/modern-language-association) |
+| `chicago-author-date` | [Chicago Manual of Style 18th edition (author-date)](http://www.zotero.org/styles/chicago-author-date) |
+| `harvard` | [Cite Them Right 12th edition (author-date/Harvard)](http://www.zotero.org/styles/harvard-cite-them-right) |
+| `ieee` | [IEEE Reference Guide version 11.29.2023](http://www.zotero.org/styles/ieee) |
+| `vancouver` | [Elsevier - NLM/Vancouver (citation-sequence)](http://www.zotero.org/styles/elsevier-vancouver) |
+| `ama` | [AMA Manual of Style 11th edition](http://www.zotero.org/styles/american-medical-association) |
+| `nature` | [Nature](http://www.zotero.org/styles/nature) |
+| `science` | [Science](http://www.zotero.org/styles/science) |
+
+The package's own code is MIT-licensed; its `package.json` says `MIT AND CC-BY-SA-3.0`.
