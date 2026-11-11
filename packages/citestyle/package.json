@@ -13,11 +13,17 @@
     "./styles/harvard": "./src/styles/harvard.js",
     "./styles/ama": "./src/styles/ama.js",
     "./styles/nature": "./src/styles/nature.js",
-    "./styles/science": "./src/styles/science.js"
+    "./styles/science": "./src/styles/science.js",
+    "./locales/*": "./locales/*.js"
   },
   "files": [
-    "src"
+    "src",
+    "locales"
   ],
+  "scripts": {
+    "build": "node build.js",
+    "prepack": "node build.js"
+  },
   "sideEffects": false,
   "keywords": [
     "citation",
@@ -58,6 +64,7 @@
     "@citestyle/core": "workspace:*",
     "@citestyle/registry": "workspace:*",
     "@citestyle/styles": "workspace:*",
-    "@citestyle/bibtex": "workspace:*"
+    "@citestyle/bibtex": "workspace:*",
+    "@citestyle/locales": "workspace:*"
   }
 }

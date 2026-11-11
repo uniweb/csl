@@ -33,6 +33,9 @@ importers:
       '@citestyle/core':
         specifier: workspace:*
         version: link:../core
+      '@citestyle/locales':
+        specifier: workspace:*
+        version: link:../locales
       '@citestyle/registry':
         specifier: workspace:*
         version: link:../registry
