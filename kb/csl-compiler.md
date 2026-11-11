@@ -437,7 +437,7 @@ These constructs compile to efficient JS and cover the vast majority of real-wor
 | **Display** | `display="block"`, `"indent"`, etc. | CSS class mapping |
 | **Sorting** | `cs:sort`, `cs:key` | Compiled comparator function |
 | **Locale terms** | `cs:term` (with form, plural) | Inlined string constants |
-| **Locale fallback** | Style → locale file → en-US | The default locale resolved at compile time; a locale pack at format time, with CSL's precedence |
+| **Locale fallback** | Style → locale file → en-US | At format time, with CSL's precedence: the default locale (inlined as a pack) or a locale pack passed as `locale` |
 | **Inheritable name options** | Global → citation/bibliography → names | Resolved at compile time (flattened) |
 | **Page ranges** | `page-range-format` | Chicago/expanded/minimal algorithms |
 | **Year suffixes** | `disambiguate-add-year-suffix` | Registry feature (runtime) |
@@ -967,7 +967,7 @@ const terms = {
 }
 ```
 
-Other languages: since format-time locales, a style inlines only the en-US terms it can reach (with its own `<locale>` elements and its default resolution), and takes a locale pack from `@citestyle/locales` as `ctx.locale` when formatting — one compiled style for every language. See Open Question 2.
+Other languages: since format-time locales, a style inlines only what it can reach of the en-US terms, of its own `<locale>` elements and of its default locale (as a pack), and takes a locale pack from `@citestyle/locales` as `ctx.locale` when formatting — one compiled style for every language, each locale resolved the same way. See Open Question 2.
 
 ### Why structured output instead of just strings?
 
