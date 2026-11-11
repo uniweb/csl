@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 import { compile } from '../src/compile.js'
 import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -147,6 +147,106 @@ describe('compile', () => {
     expect(result.text).toContain('A, X.')
     expect(result.text).toContain('et al.')
     expect(result.text).not.toContain('B')
+  })
+})
+
+// CSL 1.0.2: "Substituted variables are suppressed in the rest of the output to prevent duplication."
+// ⛔ They were not: an edited book printed its editors as its author and again as its editors, and an
+// anonymous work printed its title twice.
+describe('substitution', () => {
+  const style = `<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0">
+  <info><title>Substitution Test</title><id>substitution</id></info>
+  <locale>
+    <terms>
+      <term name="editor"></term>
+      <term name="author">Author Term Value</term>
+    </terms>
+  </locale>
+  <macro name="author">
+    <names variable="author">
+      <name/>
+      <substitute>
+        <names variable="editor"/>
+        <text variable="title" font-style="italic"/>
+      </substitute>
+    </names>
+  </macro>
+  <citation>
+    <layout delimiter="; ">
+      <group delimiter=" ">
+        <text value="by"/>
+        <names variable="author">
+          <name/>
+          <substitute>
+            <names variable="editor"/>
+            <text variable="title" font-style="italic"/>
+          </substitute>
+        </names>
+      </group>
+      <text variable="title" quotes="true" prefix=", "/>
+    </layout>
+  </citation>
+  <bibliography>
+    <layout suffix=".">
+      <group delimiter=". ">
+        <text macro="author"/>
+        <text variable="title"/>
+        <names variable="editor">
+          <label form="verb" suffix=" "/>
+          <name/>
+        </names>
+        <group delimiter=" ">
+          <text value="Title:"/>
+          <text variable="title"/>
+        </group>
+        <group delimiter=" ">
+          <text value="Content:"/>
+          <names variable="translator">
+            <substitute>
+              <text term="editor"/>
+              <text term="author"/>
+            </substitute>
+          </names>
+        </group>
+      </group>
+    </layout>
+  </bibliography>
+</style>`
+  const edited = { type: 'book', title: 'Edited volume', editor: [{ family: 'Smith', given: 'Jane' }] }
+  const authored = { type: 'book', title: 'Authored book', author: [{ family: 'Doe', given: 'John' }], editor: [{ family: 'Smith', given: 'Jane' }] }
+  const anonymous = { type: 'book', title: 'Anonymous book' }
+  let s
+
+  beforeAll(async () => {
+    s = await compileAndEval(style)
+  })
+
+  it('prints the editors standing in for the author once', () => {
+    expect(s.bibliography(edited).text).toBe('Jane Smith. Edited volume. Title: Edited volume. Content:.')
+    expect(s.bibliography(authored).text).toBe('John Doe. Authored book. edited by Jane Smith. Title: Authored book. Content:.')
+  })
+
+  // A group with a term or a value and the substituted variable alone is left empty, so dropped
+  it('prints a title standing in for the author once, and drops a group it leaves empty', () => {
+    expect(s.bibliography(anonymous).text).toBe('Anonymous book. Content:.')
+    expect(s.bibliography(anonymous).html).toBe('<div class="csl-entry"><span class="csl-title"><i>Anonymous book</i></span>. Content:.</div>')
+  })
+
+  it('suppresses within each cite of a citation, not across them', () => {
+    expect(s.citation([{ item: anonymous }, { item: authored }]).text).toBe('by Anonymous book; by John Doe, “Authored book”')
+  })
+
+  // ⛔ A group dropped a <names> whose own variable was empty, even when its substitute rendered
+  it('counts what a <names> substituted for the group around it', () => {
+    expect(s.citation([{ item: edited }]).text).toBe('by Jane Smith, “Edited volume”')
+  })
+
+  // CSL test suite, substitute_SubstituteOnlyOnceTermEmpty: the empty "editor" term ends the
+  // substitution, which counts for the group around it: "Content:", without the "author" term
+  it('ends the substitution at a term the locale defines, even an empty one', () => {
+    expect(s.bibliography(anonymous).text).toMatch(/Content:\.$/)
+    expect(s.bibliography(anonymous).text).not.toContain('Author Term Value')
   })
 })
 

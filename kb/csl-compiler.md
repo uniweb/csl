@@ -421,7 +421,7 @@ These constructs compile to efficient JS and cover the vast majority of real-wor
 | **Et-al abbreviation** | `et-al-min`, `et-al-use-first`, `et-al-use-last` | Baked into name formatter as constants |
 | **Name ordering** | `name-as-sort-order` | Baked into name formatter |
 | **Name parts** | `cs:name-part` (given/family) | Formatting applied to respective parts |
-| **Substitute** | `cs:substitute` | Fallback chain: try each element, use first non-empty |
+| **Substitute** | `cs:substitute` | Fallback chain: the first child that renders anything is used; what it rendered is suppressed for the rest of the entry (or of the cite), and counts as empty for the groups after it |
 | **Dates** | `cs:date`, `cs:date-part` | Date-formatting function with locale parts inlined |
 | **Date forms** | `form="numeric"`, `"text"` | Localized format baked in |
 | **Date parts** | `name="year"`, `"month"`, `"day"` | Individual formatters composed |

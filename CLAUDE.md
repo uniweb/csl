@@ -266,7 +266,6 @@ Run all tests: `npx vitest run`.
 
 ### Known defects
 
-- A variable a `<substitute>` renders is not suppressed for the rest of the entry, as CSL says it is: an edited book's editors print in the author position and again where the style prints editors (APA "Smith, J., & Doe, J. (Eds.). (2015). Edited volume (J. Smith & J. Doe, Eds.; …)").
 - A `<names>` element with several variables renders the first non-empty one only, not each of them.
 
 ### Known limitations (skip markers in test runner)

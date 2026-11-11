@@ -30,6 +30,12 @@ export function generate(ast, locale, options = {}) {
   body.push(`const NAME_OPTS = ${JSON.stringify(globalNameOpts)}`)
   body.push('')
 
+  // Substitution's suppression, when the style substitutes anything
+  if (ctx.hasSubst) {
+    body.push(SUBSTITUTION)
+    body.push('')
+  }
+
   // _nameConfig: runtime name option resolution (global → section → element)
   body.push(`function _nameConfig(ctx, el) {
   const c = Object.assign({}, NAME_OPTS, ctx._secOpts || {}, el)
@@ -127,7 +133,117 @@ function createCodegenContext(ast, locale) {
     // The locale data the generated code can read, and each <date> element's configurations
     reach: createReach(),
     dates: [],
+    // Whether the style substitutes, and the variables a <substitute> can render: their reads honour
+    // substitution (see SUBSTITUTION)
+    ...substitution(ast),
+    substIds: 0,
   }
+}
+
+/**
+ * Whether the style has a <substitute> (`hasSubst`), and the variables one can render (`subst`): the
+ * names, text, number and date variables under it, through the macros it calls. Only their reads in
+ * the generated code check for suppression (CSL 1.0.2: "Substituted variables are suppressed in the
+ * rest of the output").
+ */
+function substitution(ast) {
+  const vars = new Set()
+  const roots = []
+  const find = (node) => {
+    if (!node || typeof node !== 'object') return
+    if (node.type === 'names' && node.substitute) roots.push(node.substitute)
+    for (const child of node.children || []) find(child)
+    for (const cond of node.conditions || []) find(cond)
+    if (node.else) find(node.else)
+    if (node.substitute) for (const child of node.substitute.children) find(child)
+  }
+  for (const macro of Object.values(ast.macros)) find(macro)
+  if (ast.citation?.layout) find(ast.citation.layout)
+  if (ast.bibliography?.layout) find(ast.bibliography.layout)
+
+  const collect = (node, seen) => {
+    if (!node) return
+    switch (node.type) {
+      case 'names':
+        for (const v of node.variables) vars.add(v)
+        for (const child of node.substitute?.children || []) collect(child, seen)
+        break
+      case 'text':
+        if (node.variable) vars.add(node.variable === 'page-first' ? 'page' : node.variable)
+        if (node.macro && !seen.has(node.macro)) {
+          seen.add(node.macro)
+          for (const child of ast.macros[node.macro]?.children || []) collect(child, seen)
+        }
+        break
+      case 'number':
+      case 'date':
+        if (node.variable) vars.add(node.variable)
+        break
+      case 'group':
+        for (const child of node.children) collect(child, seen)
+        break
+      case 'choose':
+        for (const cond of node.conditions) for (const child of cond.children) collect(child, seen)
+        for (const child of node.else?.children || []) collect(child, seen)
+        break
+    }
+  }
+  for (const root of roots) for (const child of root.children) collect(child, new Set())
+  return { hasSubst: roots.length > 0, subst: vars }
+}
+
+/**
+ * Generated code for substitution, CSL 1.0.2 ("Substituted variables are suppressed in the rest of
+ * the output"): what a <substitute> rendered is suppressed for the rest of the entry (a bibliography
+ * entry, or one cite of a citation), within the substitution too, and counts as empty for the groups
+ * after it.
+ *
+ *   ctx._sup   each suppressed variable → the <names> that substituted it, which still sees it when
+ *              it runs again (a group's check runs its children again)
+ *   ctx._rec   what the substitution being tried has rendered
+ *   ctx._ns    the <names> with a <substitute> that rendered anything, for the groups around them
+ *
+ * A group's check runs its macros through _chk: read-only, it honours what earlier substitutions
+ * suppressed and records nothing. With no ctx._sup (a sort key), nothing is suppressed.
+ */
+const SUBSTITUTION = `function _val(item, ctx, name) {
+  const s = ctx._sup
+  return s && s.has(name) && s.get(name) !== ctx._in ? undefined : item[name]
+}
+
+function _get(item, ctx, name) {
+  const r = ctx._rec
+  if (r && r.has(name)) return undefined
+  const v = _val(item, ctx, name)
+  if (r && v != null && v !== '' && !(Array.isArray(v) && v.length === 0)) r.add(name)
+  return v
+}
+
+function _sub(ctx, id) {
+  return ctx._sup ? { ...ctx, _in: id, _rec: ctx._chk ? null : new Set() } : ctx
+}
+
+function _keep(ctx, sc, id) {
+  if (sc._rec) for (const name of sc._rec) ctx._sup.set(name, id)
+}
+
+function _chk(ctx) {
+  return ctx._sup ? { ...ctx, _chk: true, _rec: null } : ctx
+}`
+
+/**
+ * A variable read where the generated code renders it: the item's own value, or, for a variable a
+ * <substitute> can render, `_get`, hoisted into a statement so it reads (and records) once.
+ */
+function renderRead(variable, ctx, indent) {
+  if (!ctx.subst.has(variable)) return { code: '', expr: variableAccessor(variable) }
+  const r = ctx.freshVar('_r')
+  return { code: `${indent}const ${r} = _get(item, ctx, ${JSON.stringify(variable)})`, expr: r }
+}
+
+/** A variable read that only tests it: suppressed like a render, nothing recorded. */
+function checkRead(variable, ctx) {
+  return ctx.subst.has(variable) ? `_val(item, ctx, ${JSON.stringify(variable)})` : variableAccessor(variable)
 }
 
 // ── Meta ─────────────────────────────────────────────────────────────────────
@@ -244,7 +360,7 @@ function generateBibliography(bibNode, ctx) {
   ctx.reach.punctuation = true
 
   return `export function bibliography(item, ctx = {}) {
-  ctx = { ...ctx, _secOpts: BIB_NAME_OPTS, _L: _locale(ctx) }
+  ctx = { ...ctx, _secOpts: BIB_NAME_OPTS, _L: _locale(ctx)${ctx.hasSubst ? ', _sup: new Map(), _ns: new Set()' : ''} }
 ${body.code}
 ${joinCode}${layout.prefix ? ` + ${JSON.stringify(layout.prefix)}` : ''}${layout.suffix ? ` + ${JSON.stringify(layout.suffix)}` : ''}
   const _norm = _normalizePunctuation(_raw, ctx._L)
@@ -314,7 +430,10 @@ function generateCitation(citNode, ctx) {
   return `export function citation(cites, ctx = {}) {
   const _outerCtx = { ...ctx, _secOpts: CIT_NAME_OPTS, _L: _locale(ctx) }
   const rendered = cites.map(cite => {
-    let ctx = cite._disambig ? { ..._outerCtx, _disambig: cite._disambig } : _outerCtx
+    ${ctx.hasSubst
+    ? `let ctx = { ..._outerCtx, _sup: new Map(), _ns: new Set() }
+    if (cite._disambig) ctx._disambig = cite._disambig`
+    : 'let ctx = cite._disambig ? { ..._outerCtx, _disambig: cite._disambig } : _outerCtx'}
     let item = cite.item || cite
     // The locator's type: its label, "page" when it has none; CSL 1.0.1's "sub verbo" is "sub-verbo"
     if (cite.locator != null) { item = { ...item, locator: cite.locator, _locatorLabel: cite.label === 'sub verbo' ? 'sub-verbo' : cite.label || 'page' } }
@@ -340,7 +459,7 @@ function generateSortFunction(sort, ctx) {
     const dir = key.sort === 'descending' ? -1 : 1
     if (key.macro) {
       const safeName = 'macro_' + key.macro.replace(/[^a-zA-Z0-9_]/g, '_')
-      return `  { fn: (item) => ${safeName}(item, _c), dir: ${dir} }`
+      return `  { fn: (item) => ${safeName}(item, ${ctx.hasSubst ? '{ ..._c, _ns: new Set() }' : '_c'}), dir: ${dir} }`
     }
     if (key.variable) {
       // Date variables: extract sortable string from date-parts
@@ -415,18 +534,22 @@ function generateTextElement(node, ctx, indent) {
   const v = ctx.freshVar()
 
   let valueExpr
+  let read = { code: '' }
 
   if (node.variable) {
     // page-first: derive from page variable (extract first page from range)
     if (node.variable === 'page-first') {
-      const pageAcc = variableAccessor('page')
+      read = renderRead('page', ctx, indent)
+      const pageAcc = read.expr
       valueExpr = `(${pageAcc} != null && ${pageAcc} !== '' ? stripNocaseSpans(String(${pageAcc})).split(/[-\u2013,\\s]/)[0] : '')`
     } else if (node.variable === 'page' && ctx.pageRangeFormat) {
-      const accessor = variableAccessor(node.variable)
+      read = renderRead(node.variable, ctx, indent)
+      const accessor = read.expr
       ctx.reach.pageRanges = true
       valueExpr = `(${accessor} != null && ${accessor} !== '' ? pageRange(stripNocaseSpans(String(${accessor})), ${JSON.stringify(ctx.pageRangeFormat)}, ctx._L.prd) : '')`
     } else {
-      const accessor = variableAccessor(node.variable)
+      read = renderRead(node.variable, ctx, indent)
+      const accessor = read.expr
       valueExpr = `(${accessor} != null && ${accessor} !== '' ? String(${accessor}) : '')`
     }
   } else if (node.macro) {
@@ -442,7 +565,7 @@ function generateTextElement(node, ctx, indent) {
     return { code: '', expr: "''" }
   }
 
-  const code = `${indent}const ${v} = ${valueExpr}`
+  const code = (read.code ? read.code + '\n' : '') + `${indent}const ${v} = ${valueExpr}`
   let expr = v
 
   // Apply text-case (applyTextCase handles nocase span protection + stripping)
@@ -470,8 +593,9 @@ function generateTextElement(node, ctx, indent) {
 
 function generateNumberElement(node, ctx, indent) {
   const v = ctx.freshVar()
-  const accessor = variableAccessor(node.variable)
-  let code = `${indent}const ${v} = ${accessor} != null ? String(${accessor}) : ''`
+  const read = renderRead(node.variable, ctx, indent)
+  const accessor = read.expr
+  let code = (read.code ? read.code + '\n' : '') + `${indent}const ${v} = ${accessor} != null ? String(${accessor}) : ''`
 
   let expr = v
   if (node.form === 'ordinal' || node.form === 'long-ordinal') {
@@ -508,7 +632,7 @@ function generateLabelElement(node, ctx, indent) {
   if (isLocator) ctx.reach.locatorForms.add(node.form || 'long')
   else ctx.reach.keys.add(termName + formSuffix)
 
-  const accessor = variableAccessor(variable)
+  const accessor = checkRead(variable, ctx)
   // Labels should produce empty string when their variable is empty
   const emptyCheck = `(${accessor} == null || ${accessor} === ''${
     ['page', 'number-of-pages', 'number-of-volumes', 'volume', 'issue', 'edition', 'chapter-number', 'locator'].includes(variable)
@@ -562,11 +686,15 @@ function generateGroupElement(node, ctx, indent) {
   if (calledVars.length > 0) {
     const checks = calledVars.map(v => {
       if (v.startsWith('__macro__')) {
-        // For macros, check the rendered output (we can't know which vars they use)
+        // For macros, check the rendered output (we can't know which vars they use), read-only
         const safeName = 'macro_' + v.slice(9).replace(/[^a-zA-Z0-9_]/g, '_')
-        return `!${safeName}(item, ctx)`
+        return `!${safeName}(item, ${ctx.hasSubst ? '_chk(ctx)' : 'ctx'})`
       }
-      const acc = variableAccessor(v)
+      if (v.startsWith('__names__')) {
+        // A <names> with a <substitute> counts by what it rendered: CSL counts the substitution
+        return `!(ctx._ns && ctx._ns.has(${v.slice(9)}))`
+      }
+      const acc = checkRead(v, ctx)
       // For name variables, also check array length
       const nameVars = ['author', 'editor', 'translator', 'container-author',
         'collection-editor', 'composer', 'director', 'illustrator',
@@ -721,17 +849,28 @@ function generateNamesElement(node, ctx, indent) {
   ctx.reach.keys.add('and').add(elementOpts._etAlTerm || 'et-al')
 
   lines.push(`${indent}let ${v} = ''`)
+  // A variable a <substitute> can render is read once, where its branch tests it
+  const nv = node.variables.some((x) => ctx.subst.has(x)) ? ctx.freshVar('_nv') : null
+  if (nv) lines.push(`${indent}let ${nv}`)
 
   // Try each variable in order (usually "author", or "author editor")
   for (let i = 0; i < node.variables.length; i++) {
     const variable = node.variables[i]
-    const accessor = variableAccessor(variable)
     const isFirst = i === 0
+    let test
+    let accessor
+    if (ctx.subst.has(variable)) {
+      test = `(${nv} = _get(item, ctx, ${JSON.stringify(variable)})) && ${nv}.length`
+      accessor = nv
+    } else {
+      accessor = variableAccessor(variable)
+      test = `${accessor} && ${accessor}.length`
+    }
 
     if (isFirst) {
-      lines.push(`${indent}if (${accessor} && ${accessor}.length) {`)
+      lines.push(`${indent}if (${test}) {`)
     } else {
-      lines.push(`${indent}else if (${accessor} && ${accessor}.length) {`)
+      lines.push(`${indent}else if (${test}) {`)
     }
 
     lines.push(`${indent}  ${v} = formatNames(${accessor}, _nameConfig(ctx, ${JSON.stringify(elementOpts)}))`)
@@ -756,15 +895,34 @@ function generateNamesElement(node, ctx, indent) {
     lines.push(`${indent}}`)
   }
 
-  // Substitute fallback chain
+  // Substitute fallback chain: the first child that renders anything is used, and what it rendered
+  // is suppressed for the rest of the entry (SUBSTITUTION). A child is tried only while nothing is.
   if (node.substitute) {
+    const id = ++ctx.substIds
+    node._substId = id
+    const done = ctx.freshVar('_s')
     lines.push(`${indent}if (!${v}) {`)
+    lines.push(`${indent}  let ${done} = false`)
     for (const sub of node.substitute.children) {
-      const subGen = generateElement(sub, ctx, indent + '  ')
+      const subGen = generateElement(sub, ctx, indent + '      ')
+      // A term the locale defines ends the substitution even when it is empty, as citeproc-js
+      // does (CSL test suite: substitute_SubstituteOnlyOnceTermEmpty)
+      const termKey = sub.type === 'text' && sub.term ? (sub.form && sub.form !== 'long' ? sub.term + ':' + sub.form : sub.term) : null
+      lines.push(`${indent}  if (!${done}) {`)
+      lines.push(`${indent}    const _sc = _sub(ctx, ${id})`)
+      lines.push(`${indent}    {`)
+      lines.push(`${indent}      const ctx = _sc`)
       if (subGen.code) lines.push(subGen.code)
-      lines.push(`${indent}  if (!${v}) ${v} = ${subGen.expr}`)
+      lines.push(`${indent}      ${v} = ${subGen.expr}`)
+      lines.push(`${indent}      ${done} = !!${v}${termKey ? ` || ctx._L.t[${JSON.stringify(termKey)}] != null` : ''}`)
+      lines.push(`${indent}    }`)
+      lines.push(`${indent}    if (${v}) _keep(ctx, _sc, ${id})`)
+      lines.push(`${indent}  }`)
     }
+    // For the groups around it: this <names> substituted, which counts even if it rendered nothing
+    lines.push(`${indent}  if (${done}) ctx._ns?.add(${id})`)
     lines.push(`${indent}}`)
+    lines.push(`${indent}if (${v}) ctx._ns?.add(${id})`)
   }
 
   let expr = v
@@ -819,14 +977,15 @@ function buildElementNameOpts(nameNode, ctx) {
 function generateDateElement(node, ctx, indent) {
   const v = ctx.freshVar('_d')
   const variable = node.variable
-  const accessor = variableAccessor(variable)
+  const read = renderRead(variable, ctx, indent)
+  const accessor = read.expr
 
   // The date's configuration comes from the locale it formats in: `_date` builds it, once per
   // locale, from the locale's date formats and terms and this element (./locale-codegen.js)
   const index = ctx.dates.push(dateSpec(node)) - 1
   noteDateReach(node, ctx)
 
-  const code = `${indent}const ${v} = ${accessor} ? formatDate(${accessor}, _date(ctx._L, ${index})) : ''`
+  const code = (read.code ? read.code + '\n' : '') + `${indent}const ${v} = ${accessor} ? formatDate(${accessor}, _date(ctx._L, ${index})) : ''`
 
   let expr = v
   expr = applyFormatting(expr, node, ctx)
@@ -975,6 +1134,7 @@ function collectVarsFromNode(node, vars, ctx) {
       break
     case 'names':
       for (const v of (node.variables || [])) vars.add(v)
+      if (node._substId) vars.add('__names__' + node._substId)
       break
     case 'group':
       for (const child of (node.children || [])) collectVarsFromNode(child, vars, ctx)

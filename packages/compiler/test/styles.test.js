@@ -163,10 +163,10 @@ describe('Chicago Author-Date 18th edition', () => {
   // takes the author's (CSL). ⛔ It took none, so "J. Smith, J. Doe. 2015." and "(J. Smith, J. Doe 2015)".
   it('names the editors standing in for an author as it names authors', () => {
     const edited = { type: 'book', title: 'Edited volume', editor: [{ family: 'Smith', given: 'Jane' }, { family: 'Doe', given: 'John' }], issued: { 'date-parts': [[2015]] }, publisher: 'Oxford University Press' }
-    expect(style.bibliography(edited).text).toMatch(/^Smith, Jane, and John Doe, eds\. 2015\. Edited Volume\./)
+    expect(style.bibliography(edited).text).toBe('Smith, Jane, and John Doe, eds. 2015. Edited Volume. Oxford University Press.')
     expect(style.citation([{ item: edited }]).text).toBe('(Smith and Doe 2015)')
     const one = { ...edited, editor: [{ family: 'Smith', given: 'Jane' }] }
-    expect(style.bibliography(one).text).toMatch(/^Smith, Jane, ed\. 2015\./)
+    expect(style.bibliography(one).text).toBe('Smith, Jane, ed. 2015. Edited Volume. Oxford University Press.')
   })
 })
 
@@ -283,6 +283,18 @@ describe('HTML structured output', () => {
     )
     const edited = { type: 'book', title: 'Edited volume', editor: [{ family: 'Smith', given: 'Jane' }, { family: 'Doe', given: 'John' }], issued: { 'date-parts': [[2015]] }, publisher: 'Oxford University Press' }
     expect(apaStyle.bibliography(edited).text).toMatch(/^Smith, J\., & Doe, J\. \(Eds\.\)\. \(2015\)\. Edited volume/)
+  })
+
+  // What stands in for an author, the editors or the title, is not printed again (CSL substitution).
+  // ⛔ It was: "Edited volume (J. Smith & J. Doe, Eds.; 1st ed.)", and an anonymous book's title twice.
+  it('prints the editors or the title standing in for an author once', () => {
+    const edited = { type: 'book', title: 'Edited volume', editor: [{ family: 'Smith', given: 'Jane' }, { family: 'Doe', given: 'John' }], issued: { 'date-parts': [[2015]] }, publisher: 'Oxford University Press' }
+    expect(apaStyle.bibliography(edited).text).toBe('Smith, J., & Doe, J. (Eds.). (2015). Edited volume. Oxford University Press.')
+    expect(apaStyle.bibliography({ ...edited, edition: '1' }).text).toBe('Smith, J., & Doe, J. (Eds.). (2015). Edited volume (1st ed.). Oxford University Press.')
+    expect(apaStyle.citation([{ item: edited }]).text).toBe('(Smith & Doe, 2015)')
+    const anonymous = { type: 'book', title: 'Anonymous book of things', issued: { 'date-parts': [[2020]] }, publisher: 'Basic Books' }
+    expect(apaStyle.bibliography(anonymous).text).toBe('Anonymous book of things. (2020). Basic Books.')
+    expect(apaStyle.citation([{ item: anonymous }]).text).toBe('(Anonymous Book of Things, 2020)')
   })
 
   // APA abbreviates page and paragraph locators (APA 7, 8.13): <if locator="page"> tests the cite's
