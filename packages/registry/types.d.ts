@@ -1,1 +1,1 @@
-export { createRegistry, format, formatAll, formatCitation, Registry, RegistryOptions } from '@citestyle/types'
+export { createRegistry, format, formatAll, formatCitation, Registry, RegistryOptions, LocalePack } from '@citestyle/types'

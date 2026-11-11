@@ -209,6 +209,8 @@ export interface FormattedCitation {
 
 /** Runtime format context passed to compiled style functions */
 export interface FormatContext {
+  /** A locale pack (from `@citestyle/locales`) to format in; the style's default locale when absent */
+  locale?: LocalePack | null
   /** Section-level name options override (set by registry for citation vs bibliography) */
   _secOpts?: Record<string, unknown>
   /** Per-cite disambiguation context (set by registry) */
@@ -277,8 +279,61 @@ export interface CompiledStyle {
   bibliography?: (item: CslItem, ctx?: FormatContext) => FormattedEntry
   /** Format an inline citation cluster */
   citation?: (cites: CiteRef[], ctx?: FormatContext) => FormattedCitation
-  /** Sort comparator for bibliography ordering */
-  bibliographySort?: (a: CslItem, b: CslItem) => number
+  /** Sort comparator for bibliography ordering. Its sort keys render in `ctx.locale`, when given. */
+  bibliographySort?: (a: CslItem, b: CslItem, ctx?: FormatContext) => number
+}
+
+// ---------------------------------------------------------------------------
+// Locales
+// ---------------------------------------------------------------------------
+
+/** A term's text: one string, or singular and plural forms */
+export type LocaleTerm = string | { single?: string; multiple?: string }
+
+/** A localized date format ("text" or "numeric") */
+export interface LocaleDateFormat {
+  parts: Array<{
+    name: 'day' | 'month' | 'year'
+    form?: string
+    prefix?: string
+    suffix?: string
+    rangeDelimiter?: string
+    stripPeriods?: boolean
+  }>
+  delimiter?: string
+}
+
+/**
+ * A locale pack: one CSL locale's terms, date formats and options, as plain data (a JSON round
+ * trip leaves it unchanged). The default export of `@citestyle/locales/<lang>`, and the content of
+ * `locales/v1/<lang>.json` in that package's build.
+ */
+export interface LocalePack {
+  /** The pack format (1). A style formats in its default locale, with a warning, for any other. */
+  version: number
+  /** The CSL locale, e.g. "fr-FR" */
+  lang: string
+  /** Terms by "name" (long form) or "name:form" ("editor:short", "editor:verb") */
+  terms?: Record<string, LocaleTerm>
+  /** Gender-form variants of a term (ordinals): { 'ordinal-01': { feminine: 'ʳᵉ', masculine: 'ᵉʳ' } } */
+  variants?: Record<string, { feminine?: LocaleTerm; masculine?: LocaleTerm }>
+  /** An ordinal term's `match`: "last-digit", "last-two-digits" or "whole-number" */
+  match?: Record<string, string>
+  /** Nouns' genders, by term name: { edition: 'feminine', 'month-01': 'masculine' } */
+  genders?: Record<string, 'feminine' | 'masculine'>
+  /** Localized date formats */
+  dates?: { text?: LocaleDateFormat; numeric?: LocaleDateFormat }
+  /** Localized options */
+  options?: { punctuationInQuote?: boolean; limitDayOrdinalsToDay1?: boolean }
+}
+
+/** A locale as a compiled style reads it at format time (built by `localize`; internal shape) */
+export interface ResolvedLocale {
+  /** Whether the locale follows CSL's fallback (a pack), or is a style's default resolution */
+  csl?: boolean
+  lang?: string
+  t: Record<string, LocaleTerm | null>
+  [key: string]: unknown
 }
 
 /** A citation reference within a cite() call.
@@ -313,6 +368,8 @@ export interface CiteRef {
 export interface RegistryOptions {
   /** Override the style's subsequent-author-substitute string */
   subsequentAuthorSubstitute?: string
+  /** A locale pack every citation and entry is formatted in, unless a call's own ctx.locale names another */
+  locale?: LocalePack | null
 }
 
 /** Citation registry — manages cross-citation state */
@@ -347,7 +404,8 @@ export declare function formatCitation(style: CompiledStyle, cites: CiteRef[], c
 
 /** Compiler options */
 export interface CompileOptions {
-  /** Target locale (default: style's default or 'en-US') */
+  /** The style's default locale, inlined as what it formats with when no locale pack is passed
+   *  (default: the style's default-locale, else 'en-US') */
   locale?: string
   /** Output format (default: 'esm') */
   format?: 'esm' | 'cjs'
@@ -378,6 +436,19 @@ export declare function resolveLocale(locale: string, overrides?: unknown): unkn
 
 /** Generate JavaScript module source from a CSL AST */
 export declare function generate(ast: unknown, locale: unknown, options?: CompileOptions): string
+
+/** Read a CSL locale file into a locale layer (the shape of a LocalePack, without `version`) and its info */
+export declare function readLocaleFile(xml: string): {
+  layer: Omit<LocalePack, 'version' | 'lang'> & { lang?: string }
+  info: {
+    translators: Array<Record<string, string>>
+    rights: { text: string; license: string | null } | null
+    updated: string | null
+  }
+}
+
+/** Read a `<locale>` DOM element (a locale file's root, or a style's own) into a locale layer */
+export declare function readLocaleLayer(el: unknown): Omit<LocalePack, 'version' | 'lang'> & { lang?: string }
 
 // ---------------------------------------------------------------------------
 // Core helpers
@@ -416,9 +487,14 @@ export interface DateFormatConfig {
     prefix?: string
     suffix?: string
     rangeDelimiter?: string
+    stripPeriods?: boolean
   }>
   monthTerms?: Record<string, string>
   seasonTerms?: Record<string, string>
+  /** Between the rendered parts (a localized date format's own) */
+  delimiter?: string
+  /** A resolved locale: short month names and day ordinals are its terms */
+  locale?: ResolvedLocale
 }
 
 /** Apply text-case transform with nocase span protection */
@@ -445,8 +521,8 @@ export declare function longOrdinal(n: number, config?: Record<string, unknown>)
 /** Format a number as a Roman numeral */
 export declare function roman(n: number): string
 
-/** Format a page range according to CSL page-range-format */
-export declare function pageRange(pages: string, format?: string): string
+/** Format a page range according to CSL page-range-format, with the locale's page-range delimiter (default "–") */
+export declare function pageRange(pages: string, format?: string, delimiter?: string): string
 
 /** Escape HTML special characters */
 export declare function escapeHtml(str: string): string
@@ -465,6 +541,38 @@ export interface ValidationResult {
 
 /** Validate a CSL-JSON item for required fields and correct shapes */
 export declare function validateItem(item: unknown): ValidationResult
+
+/** The locale pack format compiled styles read (1) */
+export declare const LOCALE_FORMAT: number
+
+/**
+ * Resolve a locale pack for a compiled style, with CSL 1.0.2's locale fallback: the style's en-US
+ * data, then the pack, then the style's own `<locale>` elements (none, the language, the dialect).
+ * Returns null, with a warning the first time, for a pack in a format version it doesn't read.
+ */
+export declare function localize(
+  pack: LocalePack,
+  base: Partial<LocalePack>,
+  own?: Record<string, Partial<LocalePack>>
+): ResolvedLocale | null
+
+/** Merge two locale layers, the second winning, with CSL's rules for what a layer replaces */
+export declare function mergeLayers<T extends Partial<LocalePack>>(lower: T, upper?: Partial<LocalePack>): T
+
+/** A term's text in a resolved locale, singular or plural ("name" or "name:form") */
+export declare function getTerm(locale: ResolvedLocale, key: string, plural?: boolean): string
+
+/** A number as an ordinal ("2nd", "2ᵉ") or long ordinal, with the gender of the noun it counts */
+export declare function formatOrdinal(locale: ResolvedLocale, n: number, noun?: string, long?: boolean): string
+
+/** A day of the month as an ordinal, with the month's gender and limit-day-ordinals-to-day-1 */
+export declare function dayOrdinal(locale: ResolvedLocale, day: number, month?: number): string
+
+/** The formatDate configuration for one of a style's <date> elements, in a resolved locale */
+export declare function dateConfig(
+  locale: ResolvedLocale,
+  spec: { form?: string; dp?: string; parts?: DateFormatConfig['dateParts'] }
+): DateFormatConfig
 
 // ---------------------------------------------------------------------------
 // BibTeX I/O

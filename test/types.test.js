@@ -17,7 +17,7 @@ describe('type definitions match runtime', () => {
   it('types file declares all core exports', () => {
     const coreExports = Object.keys(core)
     for (const name of coreExports) {
-      expect(typesFile).toContain(`export declare function ${name}`)
+      expect(typesFile).toMatch(new RegExp(`export declare (function|const) ${name}\\b`))
     }
   })
 
