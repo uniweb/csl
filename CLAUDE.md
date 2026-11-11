@@ -262,7 +262,7 @@ Nine test layers:
 
 11. **Validation tests** (`packages/core/test/validate.test.js`) — CSL-JSON item validation: required fields, name/date shapes, common mistakes. 19 tests.
 
-Run all tests: `npx vitest run` (473 tests, ~1.5s).
+Run all tests: `npx vitest run`.
 
 ### Known limitations of a style's default resolution (no locale passed)
 
