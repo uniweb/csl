@@ -2,9 +2,9 @@
  * Locales at format time.
  *
  * A compiled style carries three pieces of locale data: the en-US terms, dates and options it can
- * reach (`base`), its own `<locale>` elements keyed by xml:lang (`own`), and its default resolution,
- * which it formats with when no locale is passed. A locale pack (one module per CSL locale,
- * from `@citestyle/locales`) is merged over the first two here, once per pack and style, into a
+ * reach (`base`), its own `<locale>` elements keyed by xml:lang (`own`), and its default locale, as
+ * a pack. That pack, or a locale pack passed as `locale` (one module per CSL locale, from
+ * `@citestyle/locales`), is merged over the first two here, once per pack and style, into a
  * resolved locale that the style's code reads its terms, ordinals, dates and quotes from.
  *
  * A locale layer — a pack, or one `<locale>` element — is plain data (it survives a JSON round
@@ -23,8 +23,6 @@
  *
  * Terms are keyed "name" for the long form and "name:form" for the others.
  */
-
-import { ordinal, longOrdinal } from './numbers.js'
 
 /** The locale pack format this code reads. */
 export const LOCALE_FORMAT = 1
@@ -91,7 +89,7 @@ function setOrDelete(target, key, source) {
  * pack's language; its `<locale>` for the pack's dialect.
  *
  * A pack in a format this code doesn't read (its `version` isn't LOCALE_FORMAT) gives null, with a
- * console warning the first time: the style then formats with its own default resolution.
+ * console warning the first time: the style then formats in its own default locale.
  *
  * @param {object} pack - a locale pack, e.g. the default export of `@citestyle/locales/fr-FR`
  * @param {object} base - the en-US layer the style carries
@@ -132,7 +130,6 @@ export function localize(pack, base, own = {}) {
   const seasons = {}
   for (let i = 1; i <= 4; i++) seasons[i] = text(t['season-0' + i])
   return {
-    csl: true,
     lang,
     t,
     v: layer.variants,
@@ -152,7 +149,7 @@ export function localize(pack, base, own = {}) {
 /**
  * A term's text, singular or plural. A form the locale doesn't define falls back as CSL says,
  * after locale fallback: "verb-short" to "verb", "symbol" to "short", and each to the long form.
- * (A style's default resolution keeps the behaviour it always had: a missing form is empty.)
+ * A form defined as empty is found, and empty (AMS's `<multiple/>` for "page" drops the label).
  *
  * @param {object} L - a resolved locale
  * @param {string} key - "name" or "name:form"
@@ -161,9 +158,9 @@ export function localize(pack, base, own = {}) {
  */
 export function getTerm(L, key, plural) {
   let v = L.t[key]
-  if (v == null && L.csl) v = formFallback(L.t, key)
+  if (v == null) v = formFallback(L.t, key)
   if (v == null) return ''
-  return typeof v === 'string' ? v : plural ? (v.multiple || v.single || '') : (v.single || '')
+  return typeof v === 'string' ? v : plural ? (v.multiple ?? v.single ?? '') : (v.single ?? '')
 }
 
 function formFallback(t, key) {
@@ -187,8 +184,6 @@ function formFallback(t, key) {
  * @returns {string}
  */
 export function formatOrdinal(L, n, noun, long) {
-  // A style's default resolution renders English ordinals, as it always has
-  if (!L.csl) return long ? longOrdinal(n) : ordinal(n)
   const gender = noun ? L.g[noun] : undefined
   if (long && n >= 1 && n <= 10 && Number.isInteger(n)) {
     const word = gendered(L, 'long-ordinal-' + pad2(n), gender)

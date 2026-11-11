@@ -68,8 +68,10 @@ describe('localize: CSL 1.0.2 locale fallback', () => {
   })
 
   it('stops at a term defined as empty, as CSL says', () => {
-    const L = localize({ version: 1, lang: 'xx-XX', terms: { and: '' } }, EN)
+    const L = localize({ version: 1, lang: 'xx-XX', terms: { and: '', 'page:short': { single: 'p.', multiple: '' } } }, EN)
     expect(getTerm(L, 'and')).toBe('')
+    expect(getTerm(L, 'page:short')).toBe('p.')
+    expect(getTerm(L, 'page:short', true)).toBe('') // <multiple/>: no label for a range
   })
 
   it('falls back to another form only after every locale lacks the form asked for', () => {
@@ -78,12 +80,6 @@ describe('localize: CSL 1.0.2 locale fallback', () => {
     expect(getTerm(L, 'editor:verb-short')).toBe('édité par') // verb-short → verb
     expect(getTerm(L, 'editor:short')).toBe('ed.') // en-US has the short form: locale fallback first
     expect(getTerm(L, 'nothing:short')).toBe('')
-  })
-
-  it('keeps a style\'s default resolution as it was: a missing form is empty', () => {
-    const L0 = { t: { in: 'in' } }
-    expect(getTerm(L0, 'in:short')).toBe('')
-    expect(getTerm(L0, 'in')).toBe('in')
   })
 
   it('takes punctuation-in-quote, the closing quotes and the page-range delimiter from the locale', () => {
@@ -141,13 +137,6 @@ describe('mergeLayers', () => {
 })
 
 describe('formatOrdinal', () => {
-  it('renders English ordinals in a style\'s default resolution, as before', () => {
-    const L0 = { t: {} }
-    expect([1, 2, 3, 4, 11, 12, 13, 21, 101, 111].map((n) => formatOrdinal(L0, n))).toEqual(
-      ['1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '101st', '111th'])
-    expect(formatOrdinal(L0, 2, 'edition', true)).toBe('second')
-  })
-
   it('reads en-US\'s ordinal terms with CSL\'s matching', () => {
     const L = localize({ version: 1, lang: 'en-GB' }, EN)
     expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 100, 101, 111, 112, 113].map((n) => formatOrdinal(L, n))).toEqual(

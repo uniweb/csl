@@ -104,7 +104,7 @@ format(apa, book, { locale: de }).text
 // Knuth, D. E. (1997). The art of computer programming (3. Aufl., Bd. 1). Addison-Wesley.
 ```
 
-Terms ("und", "Hrsg.", "S."), ordinals ("2. Aufl."), month names, date formats and quotation marks („…“) follow the pack. Without `locale`, a style formats in its default locale, as before.
+Terms ("und", "Hrsg.", "S."), ordinals ("2. Aufl."), month names, date formats and quotation marks („…“) follow the pack. Without `locale`, a style formats in its default locale, resolved the same way.
 
 ### Direct function calls (no registry, no helpers)
 

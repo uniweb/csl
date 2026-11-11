@@ -1,7 +1,7 @@
 /**
  * Compile a CSL XML string into a JavaScript module string.
  *
- * Pipeline: XML → parse → resolve locale → codegen → JS module
+ * Pipeline: XML → parse → the default locale's data → codegen → JS module
  *
  * @param {string} cslXml - CSL XML source
  * @param {object} [options]
@@ -17,12 +17,13 @@ export function compile(cslXml, options = {}) {
   // 1. Parse CSL XML → AST
   const ast = parse(cslXml)
 
-  // 2. Resolve locale: style overrides → locale file → en-US fallback. A locale asked for wins; the
-  // style's default-locale is for when none is (the parser reads en-US where a style names none).
+  // 2. The default locale's data: a locale asked for wins; the style's default-locale is for when
+  // none is (the parser reads en-US where a style names none). The compiled style resolves it with
+  // the style's own <locale> elements at format time, as it resolves any pack.
   // ⛔ The style's default used to win always, so `--locale fr-FR` compiled English for every
   // style, and a style naming no default could not be rendered in its own en-GB block.
   const targetLocale = options.locale || ast.defaultLocale || 'en-US'
-  const resolvedLocale = resolveLocale(targetLocale, ast.localeOverrides)
+  const resolvedLocale = resolveLocale(targetLocale)
 
   // 3. Merge inheritable name options from the style root into the AST
   //    (the codegen handles this per-section)

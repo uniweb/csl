@@ -419,10 +419,11 @@ describe('AMA 11th edition', () => {
     expect(style.meta.title).toContain('AMA')
   })
 
+  // AMA's own <locale xml:lang="en"> makes the page-range delimiter a hyphen, as AMA 11 writes ranges
   it('formats article-journal bibliography', () => {
     const bib = style.bibliography(article)
     expect(bib.text).toBe(
-      '1. Smith JA, Jones BC. Neural correlates of consciousness. Nature Neuroscience. 2024;27(3):45\u201367. doi:10.1038/nn.2024'
+      '1. Smith JA, Jones BC. Neural correlates of consciousness. Nature Neuroscience. 2024;27(3):45-67. doi:10.1038/nn.2024'
     )
   })
 

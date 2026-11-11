@@ -14,8 +14,9 @@ import { getTerm, dayOrdinal } from './locale.js'
  * @param {object} [config.seasonTerms] - Locale season terms { '1': 'Spring', ... }
  * @param {string} [config.delimiter] - Between the rendered parts (a localized date format's own)
  * @param {object} [config.locale] - A resolved locale (see `localize`): short month names and day
- *   ordinals are its terms. Without one, a short month is the long name's first three letters and
- *   a day ordinal is English, as a style's default resolution has always rendered them.
+ *   ordinals are its terms. Without one (a style compiled before format-time locales), a short
+ *   month is the long name's first three letters and a day ordinal is English, as such styles
+ *   rendered them.
  * @returns {string} Formatted date string
  */
 export function formatDate(date, config = {}) {

@@ -93,54 +93,14 @@ function parseInfo(el) {
 }
 
 /**
- * Parse a locale override within the style.
- *
- * `terms`, `dateFormats` and `styleOptions` feed the compile-time resolution of the style's default
- * locale (./locale.js). `layer` is the same element as the format-time code reads it, applied over
- * a locale pack (./locale-data.js).
+ * Parse a locale override within the style: its xml:lang, and its data as a locale layer, which the
+ * compiled style applies over its default locale or a pack (./locale-data.js).
  */
 function parseLocaleOverride(el) {
-  const override = {
+  return {
     lang: attr(el, 'xml:lang') || attr(el, 'lang'),
-    terms: {},
-    dateFormats: {},
-    styleOptions: {},
     layer: readLocaleLayer(el),
   }
-
-  for (const child of childElements(el)) {
-    const name = localName(child)
-    if (name === 'terms') {
-      for (const termEl of childElements(child)) {
-        if (localName(termEl) === 'term') {
-          const termName = attr(termEl, 'name')
-          const form = attr(termEl, 'form') || 'long'
-          const key = form === 'long' ? termName : termName + ':' + form
-
-          // Check for single/multiple child elements
-          const single = findChild(termEl, 'single')
-          const multiple = findChild(termEl, 'multiple')
-          if (single && multiple) {
-            override.terms[key] = {
-              single: textContent(single),
-              multiple: textContent(multiple),
-            }
-          } else {
-            override.terms[key] = textContent(termEl)
-          }
-        }
-      }
-    } else if (name === 'date') {
-      const form = attr(child, 'form')
-      override.dateFormats[form] = parseDateNode(child)
-    } else if (name === 'style-options') {
-      override.styleOptions = {
-        punctuationInQuote: attr(child, 'punctuation-in-quote'),
-      }
-    }
-  }
-
-  return override
 }
 
 /**

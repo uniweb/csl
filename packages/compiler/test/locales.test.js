@@ -48,7 +48,7 @@ const items = {
   },
 }
 
-// Each style's text, with no locale (as it formats today) and in the fr-FR, de-DE and es-ES packs.
+// Each style's text, with no locale (its default, en-US) and in the fr-FR, de-DE and es-ES packs.
 // Exactly as the locale files write them: French « » carry no-break spaces ( ) and its page
 // ranges a non-breaking hyphen (‑); "et al." in Spanish and "u. a." in German, a no-break
 // space. In US English a period goes inside the closing quote; in French, German and Spanish not.
@@ -85,10 +85,10 @@ const EXPECTED = {
   },
   'mla': {
     'none': {
-      article: 'Smith, John Andrew, et al. \u201cNeural Correlates of Consciousness.\u201d Nature Neuroscience, vol. 27, no. 3, March 2024, pp. 45\u201367, https://doi.org/10.1038/nn.2024.',
+      article: 'Smith, John Andrew, et al. \u201cNeural Correlates of Consciousness.\u201d Nature Neuroscience, vol. 27, no. 3, Mar. 2024, pp. 45\u201367, https://doi.org/10.1038/nn.2024.',
       book: 'Norman, Donald, et al. The Design of Everyday Things. 2nd ed., vol. 3, Basic Books, 2013.',
       chapter: 'LeCun, Yann. \u201cDeep Learning Fundamentals.\u201d Deep Learning, Ian Goodfellow and Yoshua Bengio, 1st ed., MIT Press, 2016, pp. 145\u201389.',
-      webpage: 'Writer, Wendy. \u201cHow to Cite a Web Page.\u201d Example Site, https://example.org/cite. Accessed February 1, 2024.',
+      webpage: 'Writer, Wendy. \u201cHow to Cite a Web Page.\u201d Example Site, https://example.org/cite. Accessed 1 Feb. 2024.',
       cite: '(Smith et al.; Norman et al.)',
     },
     'fr-FR': {
@@ -155,7 +155,7 @@ for (const [name, byLocale] of Object.entries(EXPECTED)) {
     })
 
     for (const [lang, expected] of Object.entries(byLocale)) {
-      it(lang === 'none' ? 'formats as before with no locale' : `formats in ${lang}`, () => {
+      it(lang === 'none' ? 'formats in its default locale with no locale' : `formats in ${lang}`, () => {
         const ctx = lang === 'none' ? undefined : { locale: packs.get(lang) }
         for (const item of Object.keys(items)) {
           expect(style.bibliography(items[item], ctx).text).toBe(expected[item])
@@ -169,7 +169,7 @@ for (const [name, byLocale] of Object.entries(EXPECTED)) {
       expect(html).toContain('<span class="csl-edition">2.</span> Aufl.')
     })
 
-    it('formats as before for a locale of null or undefined', () => {
+    it('formats in its default locale for a locale of null or undefined', () => {
       for (const item of Object.values(items)) {
         const before = style.bibliography(item)
         expect(style.bibliography(item, { locale: undefined })).toEqual(before)

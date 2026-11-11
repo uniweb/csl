@@ -169,7 +169,7 @@ The CSL 1.0.2 specification defines ~50 XML elements. Key complexity areas:
 - **Groups**: suppress entire group when all called variables are empty (no dangling delimiters)
 - **Conditionals**: type, variable, is-numeric, match modes (any/all/none)
 - **Macros**: inline at call sites, detect cycles, shared macros become named functions
-- **Locale terms**: read at format time from a resolved locale (`ctx._L`). A compiled style inlines `EN` (the en-US terms, date formats and options it can reach), `OWN` (its own `<locale>` elements by xml:lang) and `L0` (its default resolution: `resolveLocale` at compile time, unchanged). A pack passed as `ctx.locale` is resolved by core's `localize` with CSL 1.0.2 fallback (style dialect > style language > style generic > pack > en-US) and cached per pack in a WeakMap in the module. With no pack, output is byte-identical to the compile-time-only compiler; `test/no-locale.test.js` holds it to a record made before the change. `L0` keeps that compiler's quirks deliberately (see Known limitations).
+- **Locale terms**: read at format time from a resolved locale (`ctx._L`). A compiled style inlines `EN` (the en-US terms, date formats and options it can reach), `OWN` (its own `<locale>` elements by xml:lang) and `DEF` (its default locale as a pack, from the compiler's CSL locale files in `packages/compiler/locales/`). What it formats with when no locale is passed is `L0 = localize(DEF, EN, OWN)`; a pack passed as `ctx.locale` is resolved the same way, by core's `localize` with CSL 1.0.2 fallback (style dialect > style language > style generic > pack > en-US), and cached per pack in a WeakMap in the module. `test/no-locale.test.js` holds the no-locale output to a record; a change that moves it re-records it on purpose.
 
 ### Name option resolution (important design pattern)
 
@@ -264,16 +264,10 @@ Nine test layers:
 
 Run all tests: `npx vitest run`.
 
-### Known limitations of a style's default resolution (no locale passed)
+### Known defects
 
-Kept so that output with no locale stays exactly as before; a locale pack follows CSL instead:
-- `<locale xml:lang="en">` blocks are not applied when the default locale is en-US or en-GB (`resolveLocale` matches xml:lang exactly), so e.g. MLA prints "chap." where its own block says "ch."
-- term text is trimmed at compile time (en-US "ad" is " AD" in the file); a missing term form renders empty instead of falling back
-- ordinals are English whatever the default locale (DGPs: "2nd Auflage"); short months are the long name's first three letters; `limit-day-ordinals-to-day-1` is ignored
-- a localized date with `<date-part>` children renders those parts in the style's order, with no locale format (Harvard: "Accessed: 1March2024")
-- `<style-options punctuation-in-quote="false">` inside a style's `<locale>` is read as a string, so truthy
-
-Not locale-related, in both cases: `<if locator="…">` tests `ctx.locator`, which is never set (APA prints "Page 42" for "p. 42"); a names label (`(Eds.)`, "edited by") renders only for a `<names>` element's second variable onward.
+- `<if locator="…">` tests `ctx.locator`, which is never set (APA prints "Page 42" for "p. 42").
+- A names label (`(Eds.)`, "edited by") renders only for a `<names>` element's second variable onward.
 
 ### Known limitations (skip markers in test runner)
 - `position=`, `ibid` — footnote-centric features

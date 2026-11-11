@@ -3,10 +3,9 @@
  *
  * `readLocaleLayer` reads a `<locale>` element — a locale file's root, or one of a style's own —
  * into a locale layer: the shape `@citestyle/core`'s `localize` merges and `@citestyle/locales`
- * ships (see packages/core/src/locale.js). It keeps what the format-time code needs and the
- * compile-time resolution in ./locale.js never kept: a term's text exactly as written (en-US " AD",
- * French "« " and " »" with their no-break spaces), gender-form variants, `match`, and the gender
- * of nouns.
+ * ships (see packages/core/src/locale.js): a term's text exactly as written (en-US " AD", French
+ * "« " and " »" with their no-break spaces), gender-form variants, `match`, the gender of nouns,
+ * date formats and options. `localeData` assembles a locale from the CSL locale files.
  */
 import { DOMParser } from '@xmldom/xmldom'
 import { mergeLayers } from '@citestyle/core'

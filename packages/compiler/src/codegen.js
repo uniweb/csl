@@ -6,15 +6,16 @@
  *
  * Every locale-dependent value — terms, month and season names, ordinals, date formats, quotation
  * marks, punctuation-in-quote — is read at format time from a resolved locale, `ctx._L`: the
- * style's default resolution, or the locale pack passed as `ctx.locale` (./locale-codegen.js).
+ * style's default locale, or the locale pack passed as `ctx.locale`, each resolved the same way
+ * (./locale-codegen.js).
  */
 import { createReach, emitLocaleData, dateSpec } from './locale-codegen.js'
 
 /**
- * Generate JavaScript module source from a CSL AST + resolved locale.
+ * Generate JavaScript module source from a CSL AST and the style's default locale.
  *
  * @param {object} ast - Parsed CSL style AST
- * @param {object} locale - Resolved locale data
+ * @param {{ lang: string, layer: object }} locale - The default locale's data, from resolveLocale()
  * @param {object} [options]
  * @returns {string} JavaScript module source code
  */
@@ -77,8 +78,8 @@ export function generate(ast, locale, options = {}) {
   lines.push(`export const meta = ${JSON.stringify(buildMeta(ast), null, 2)}`)
   lines.push('')
 
-  // Locale data: the en-US base, the style's own <locale> elements, its default resolution
-  lines.push(...emitLocaleData({ ast, locale, reach: ctx.reach, dates: ctx.dates, punctuation: punctuationInQuote(ctx) }))
+  // Locale data: the en-US base, the style's own <locale> elements, its default locale
+  lines.push(...emitLocaleData({ ast, locale, reach: ctx.reach, dates: ctx.dates }))
   lines.push('')
 
   lines.push(...body)
@@ -272,24 +273,6 @@ function _normalizePunctuation(str, L) {
 ${sortCode}`
 }
 
-// ── Punctuation inside a closing quote ───────────────────────────────────────
-
-/**
- * The default resolution's punctuation-in-quote (CSL's option, which en-US sets): whether a
- * bibliography moves a period or comma inside a closing quote (`q`), and the character class of the
- * locale's closing quotes (`Q`). A pack's come from the pack, at format time.
- * ⛔ The option was parsed and never applied, so MLA and Chicago in English printed
- * `“A Title”.` where they write `“A Title.”`
- *
- * @param {object} ctx - the codegen context, holding the resolved locale
- * @returns {{ q: boolean, Q: string }}
- */
-function punctuationInQuote(ctx) {
-  const text = (term) => (typeof term === 'string' ? term : term?.single || '')
-  const closing = [text(ctx.locale.terms?.['close-quote']) || '”', text(ctx.locale.terms?.['close-inner-quote']) || '’']
-  const charClass = '[' + [...new Set(closing.join(''))].map((c) => (/[\]\\^-]/.test(c) ? '\\' + c : c)).join('') + ']'
-  return { q: !!ctx.locale?.styleOptions?.punctuationInQuote, Q: charClass }
-}
 
 // ── Citation generation ──────────────────────────────────────────────────────
 
@@ -810,41 +793,9 @@ function generateDateElement(node, ctx, indent) {
   const variable = node.variable
   const accessor = variableAccessor(variable)
 
-  // Build date config
-  let dateParts = node.dateParts
-
-  // If form is specified, use locale date format
-  if (node.form && (!dateParts || dateParts.length === 0)) {
-    const localeFormat = ctx.locale.dateFormats[node.form]
-    if (localeFormat) {
-      // Locale file uses 'parts', parser locale overrides use 'dateParts'
-      const formatParts = localeFormat.parts || localeFormat.dateParts || []
-      dateParts = formatParts.map(p => ({
-        ...p,
-        // Merge any date-part overrides from the style
-        ...(node.dateParts?.find(dp => dp.name === p.name) || {}),
-      }))
-    }
-  }
-
-  // Apply date-parts restriction (e.g., date-parts="year" → only year)
-  if (node.datePartsAttr && dateParts.length > 0) {
-    const allowed = new Set(node.datePartsAttr.split('-')) // "year-month" → {"year","month"}
-    dateParts = dateParts.filter(dp => allowed.has(dp.name))
-  }
-
-  // In the default resolution, the configuration the compiler resolved: its parts, as before. In a
-  // pack's locale, `_date` builds it from the pack's date formats and terms (./locale-codegen.js).
-  const legacy = {
-    dateParts: (dateParts || []).map(dp => ({
-      name: dp.name,
-      form: dp.form,
-      prefix: dp.prefix || '',
-      suffix: dp.suffix || '',
-      rangeDelimiter: dp.rangeDelimiter,
-    })),
-  }
-  const index = ctx.dates.push({ legacy, spec: dateSpec(node) }) - 1
+  // The date's configuration comes from the locale it formats in: `_date` builds it, once per
+  // locale, from the locale's date formats and terms and this element (./locale-codegen.js)
+  const index = ctx.dates.push(dateSpec(node)) - 1
   noteDateReach(node, ctx)
 
   const code = `${indent}const ${v} = ${accessor} ? formatDate(${accessor}, _date(ctx._L, ${index})) : ''`

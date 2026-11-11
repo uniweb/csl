@@ -329,8 +329,6 @@ export interface LocalePack {
 
 /** A locale as a compiled style reads it at format time (built by `localize`; internal shape) */
 export interface ResolvedLocale {
-  /** Whether the locale follows CSL's fallback (a pack), or is a style's default resolution */
-  csl?: boolean
   lang?: string
   t: Record<string, LocaleTerm | null>
   [key: string]: unknown
@@ -431,8 +429,8 @@ export declare function compile(cslXml: string, options?: CompileOptions): Compi
 /** Parse a CSL XML string into an AST (for validation/inspection) */
 export declare function parse(cslXml: string): unknown
 
-/** Resolve locale data for a target locale with optional style overrides */
-export declare function resolveLocale(locale: string, overrides?: unknown): unknown
+/** The style's default locale: its data from the CSL locale files, which generate() inlines as a pack */
+export declare function resolveLocale(locale?: string): unknown
 
 /** Generate JavaScript module source from a CSL AST */
 export declare function generate(ast: unknown, locale: unknown, options?: CompileOptions): string

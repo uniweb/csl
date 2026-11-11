@@ -147,21 +147,21 @@ console.log(ast.info.title)
 console.log(Object.keys(ast.macros))
 ```
 
-### `resolveLocale(locale, overrides?)`
+### `resolveLocale(locale)`
 
-Resolve the style's default locale at compile time by merging: style-level term overrides → locale XML file → en-US fallback.
+The style's default locale: its data from the CSL locale files, as `localeData` assembles it. `generate()` inlines it as a pack of the style's own, and the compiled style resolves it at format time, under its own `<locale>` elements, exactly as it resolves a locale pack passed as `locale`.
 
 ```javascript
-const locale = resolveLocale('fr-FR', ast.localeOverrides)
+const locale = resolveLocale('fr-FR')
 ```
 
 ### `generate(ast, locale, options?)`
 
-Generate JavaScript module source from a parsed AST and resolved locale. Use this when you need control over the parse and locale resolution steps separately.
+Generate JavaScript module source from a parsed AST and the style's default locale. Use this when you need control over the parse and locale steps separately.
 
 ```javascript
 const ast = parse(cslXml)
-const locale = resolveLocale('en-US', ast.localeOverrides)
+const locale = resolveLocale('en-US')
 const code = generate(ast, locale, { format: 'esm' })
 ```
 
@@ -188,7 +188,7 @@ Every CSL construct maps directly to JavaScript:
 | `<choose><if type="article-journal">` | `if (item.type === 'article-journal')` |
 | `<names variable="author">` | `formatNames(item.author, { /* config baked in */ })` |
 | `<group delimiter=", ">` | Array collect → filter empties → join |
-| Locale terms (`"et al."`, `"Retrieved from"`) | Read at format time: the en-US terms the style can reach, its own `<locale>` elements and its default resolution are inlined as data |
+| Locale terms (`"et al."`, `"Retrieved from"`) | Read at format time: the en-US terms the style can reach, its own `<locale>` elements and its default locale (as a pack) are inlined as data |
 
 The result is a module that exports `bibliography()`, `citation()`, `bibliographySort()`, and `meta` — pure functions with no XML and no interpretation. A locale pack passed at format time is merged over the style's locale data once and cached.
 

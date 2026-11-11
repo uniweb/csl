@@ -35,7 +35,7 @@ const registry = createRegistry(apa, { locale: fr })
 registry.cite([{ id: 'knuth1997' }], { locale: de })
 ```
 
-Pass the pack object, not a language code. Import only the languages you use, and your bundler leaves out the rest. A call without `locale` formats in the style's default locale, exactly as it did before packs existed.
+Pass the pack object, not a language code. Import only the languages you use, and your bundler leaves out the rest. A call without `locale` formats in the style's default locale, resolved the same way.
 
 A language code alone works as CSL defines it: `@citestyle/locales/fr` is the pack of French's primary dialect, fr-FR.
 

@@ -58,7 +58,7 @@ describe('a registry in a locale', () => {
     expect(registry.getBibliography({ locale: fr })[0].text).toContain('3ᵉ éd.')
   })
 
-  it('formats as before without a locale', () => {
+  it('formats in the style\'s default locale without a locale', () => {
     const plain = createRegistry(mla)
     plain.addItems(clone(items))
     const none = createRegistry(mla, { locale: undefined })

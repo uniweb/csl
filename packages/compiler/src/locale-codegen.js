@@ -1,20 +1,22 @@
 /**
- * The locale data a compiled style carries, and the code that resolves a locale pack at format time.
+ * The locale data a compiled style carries, and the code that resolves a locale at format time.
  *
  * Codegen records, as it writes the style's code, every locale value that code can read (`reach`).
  * From it this module emits:
  *
  *   EN      the en-US terms, dates and options the style can reach, as CSL's locale file gives
- *           them: the lowest layer under a locale pack
- *   OWN     the style's own <locale> elements, keyed by xml:lang ('' for none), applied over a pack
- *   L0      the style's default resolution (its default-locale, else en-US, with its own <locale>
- *           overrides, as the compiler resolved it): what it formats with when no locale is passed
- *   _DATES  each <date> element, for building its configuration in a pack's locale
+ *           them: the lowest layer under any locale
+ *   OWN     the style's own <locale> elements, keyed by xml:lang ('' for none)
+ *   DEF     the style's default locale (its default-locale, else en-US), as a pack of its own:
+ *           what the style can reach of the locale's data, or nothing for en-US, which EN is
+ *   L0      DEF resolved over EN and OWN, as any pack is: what the style formats with when no
+ *           locale is passed
+ *   _DATES  each <date> element, for building its configuration in a locale
  *
- * and `_locale(ctx)`, which returns L0, or the pack in ctx.locale resolved over EN and OWN (cached
+ * and `_locale(ctx)`, which returns L0, or the pack in ctx.locale resolved the same way (cached
  * per pack in a WeakMap).
  */
-import { mergeLayers } from '@citestyle/core'
+import { mergeLayers, LOCALE_FORMAT } from '@citestyle/core'
 import { loadEnglishLayer } from './locale-data.js'
 
 /** The terms a cite's locator label can name (CSL 1.0.2's locator types, and two older names). */
@@ -52,7 +54,7 @@ export function createReach() {
 }
 
 /**
- * The keys a style's default resolution reads from its terms: its reach, with the locator family.
+ * The term keys a style's code reads: its reach, with the locator family.
  */
 function readKeys(reach) {
   const keys = new Set(reach.keys)
@@ -135,14 +137,12 @@ function restrict(layer, reach, wanted) {
  *
  * @param {object} args
  * @param {object} args.ast - the parsed style
- * @param {object} args.locale - the style's default resolution, from ./locale.js
+ * @param {{ lang: string, layer: object }} args.locale - the style's default locale, from resolveLocale()
  * @param {object} args.reach - what the style's code reads (createReach), filled by codegen
- * @param {Array<{ legacy: object, spec: object }>} args.dates - each <date>: its configuration in
- *   the default resolution, and its description for a pack's
- * @param {{ q: boolean, Q: string }} args.punctuation - the default resolution's punctuation-in-quote
+ * @param {object[]} args.dates - each <date> element's description (dateSpec)
  * @returns {string[]} lines of code
  */
-export function emitLocaleData({ ast, locale, reach, dates, punctuation }) {
+export function emitLocaleData({ ast, locale, reach, dates }) {
   const keys = readKeys(reach)
   const wanted = wantedKeys(reach, keys)
 
@@ -154,13 +154,15 @@ export function emitLocaleData({ ast, locale, reach, dates, punctuation }) {
   }
   const EN = restrict({ ...en, lang: 'en-US' }, reach, enWanted)
 
+  // A layer over EN keeps the forms a missing one falls back to as well
+  const overWanted = new Set(wanted)
+  for (const key of wanted) for (const k of fallbackKeys(key)) overWanted.add(k)
+
   // The style's own <locale> elements, by xml:lang
-  const ownWanted = new Set(wanted)
-  for (const key of wanted) for (const k of fallbackKeys(key)) ownWanted.add(k)
   const own = {}
   for (const override of ast.localeOverrides || []) {
     const lang = override.lang || ''
-    const layer = restrict(override.layer || {}, reach, ownWanted)
+    const layer = restrict(override.layer || {}, reach, overWanted)
     delete layer.lang
     own[lang] = own[lang] ? mergeLayers(own[lang], layer) : layer
   }
@@ -170,43 +172,20 @@ export function emitLocaleData({ ast, locale, reach, dates, punctuation }) {
     if (!Object.keys(layer).length) delete own[lang]
   }
 
-  // The default resolution, as the compiler resolved it: its terms where they differ from EN's
-  const delta = {}
-  for (const key of [...keys].sort()) {
-    const value = Object.prototype.hasOwnProperty.call(locale.terms, key) ? locale.terms[key] : undefined
-    const base = EN.terms?.[key]
-    if (JSON.stringify(value) !== JSON.stringify(base)) delta[key] = value === undefined ? null : value
-  }
+  // The default locale, as a pack: en-US's data is EN itself
+  const lang = locale.layer.lang || locale.lang || 'en-US'
+  const DEF = { version: LOCALE_FORMAT, lang, ...(lang === 'en-US' ? {} : restrict(locale.layer, reach, overWanted)) }
 
   const lines = []
   lines.push('// Locale data. EN: the en-US terms, date formats and options this style can reach, as CSL\'s')
-  lines.push('// locale file gives them. OWN: the style\'s own <locale> elements, by xml:lang. A locale pack is')
-  lines.push('// resolved over EN, then OWN. L0: the style\'s default (its default-locale, else en-US, with its')
-  lines.push('// own <locale> overrides), which it formats with when no locale is passed.')
+  lines.push('// locale file gives them. OWN: the style\'s own <locale> elements, by xml:lang. DEF: its default')
+  lines.push('// locale, as a pack. L0, what it formats with when no locale is passed, is DEF resolved over')
+  lines.push('// EN and OWN, as a pack passed as `locale` is.')
   lines.push(`const EN = ${JSON.stringify(EN)}`)
   lines.push(`const OWN = ${JSON.stringify(own)}`)
-
-  // formatDate reads a part's unset attributes (null, '') as absent, so they go
-  const legacyConfigs = dates.map((d) => ({
-    dateParts: d.legacy.dateParts.map((part) =>
-      Object.fromEntries(Object.entries(part).filter(([, value]) => value != null && value !== '')),
-    ),
-  }))
-  const usesMonths = legacyConfigs.some((c) => c.dateParts.some((p) => p.name === 'month'))
-  if (usesMonths) {
-    lines.push(`const _M = ${JSON.stringify(locale.monthTerms || {})}`)
-    lines.push(`const _S = ${JSON.stringify(locale.seasonTerms || {})}`)
-  }
-  const dc = legacyConfigs.map((c) =>
-    usesMonths && c.dateParts.some((p) => p.name === 'month')
-      ? `{"dateParts":${JSON.stringify(c.dateParts)},"monthTerms":_M,"seasonTerms":_S}`
-      : JSON.stringify({ dateParts: c.dateParts }),
-  )
-  const deltaCode = Object.keys(delta).length ? ', ' + JSON.stringify(delta).slice(1, -1) : ''
-  lines.push(
-    `const L0 = { t: { ...EN.terms${deltaCode} }, dc: [${dc.join(', ')}], q: ${punctuation.q}, Q: ${JSON.stringify(punctuation.Q)} }`,
-  )
-  lines.push(`const _DATES = ${JSON.stringify(dates.map((d) => d.spec))}`)
+  lines.push(`const DEF = ${JSON.stringify(DEF)}`)
+  lines.push(`const _DATES = ${JSON.stringify(dates)}`)
+  lines.push('const L0 = localize(DEF, EN, OWN)')
   lines.push('')
   lines.push(`const _locales = new WeakMap()
 function _locale(ctx) {
