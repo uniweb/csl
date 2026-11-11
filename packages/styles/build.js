@@ -28,8 +28,9 @@ const CLI = join(ROOT, 'packages/compiler/src/cli.js')
 /**
  * Styles to compile.
  *
- * Each entry maps a CSL filename (in test/fixtures/) to its output name.
- * The output name must match the exports map in package.json.
+ * Each entry names a CSL file in test/fixtures/ and the module compiled from it, or is
+ * [name, locale] for a style compiled with a default locale other than its own default-locale.
+ * The name must match the exports map in package.json.
  *
  * To add a new style:
  * 1. Add the .csl file to test/fixtures/
@@ -43,7 +44,9 @@ const STYLES = [
   'chicago-author-date',
   'ieee',
   'vancouver',
-  'harvard',
+  // Cite Them Right is a British guide, and its style names no default-locale: British English
+  // ("1 March 2024", ‘single quotes’, "edn") is what the module formats in without a pack
+  ['harvard', 'en-GB'],
 
   // Additional popular styles
   'ama',
@@ -69,7 +72,8 @@ console.log(`Compiling ${STYLES.length} styles...\n`)
 
 let failed = 0
 
-for (const style of STYLES) {
+for (const entry of STYLES) {
+  const [style, locale] = Array.isArray(entry) ? entry : [entry]
   const input = join(FIXTURES, `${style}.csl`)
   const output = join(__dirname, `${style}.js`)
 
@@ -80,7 +84,7 @@ for (const style of STYLES) {
   }
 
   try {
-    execSync(`node ${CLI} compile ${input} -o ${output}`, {
+    execSync(`node ${CLI} compile ${input}${locale ? ` --locale ${locale}` : ''} -o ${output}`, {
       cwd: ROOT,
       stdio: 'inherit',
     })

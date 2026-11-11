@@ -180,7 +180,7 @@ import * as mla from 'citestyle/styles/mla'                    // MLA 9th editio
 import * as chicago from 'citestyle/styles/chicago-author-date' // Chicago 17th (author-date)
 import * as ieee from 'citestyle/styles/ieee'                  // IEEE
 import * as vancouver from 'citestyle/styles/vancouver'        // Vancouver
-import * as harvard from 'citestyle/styles/harvard'            // Harvard (Cite Them Right)
+import * as harvard from 'citestyle/styles/harvard'            // Harvard (Cite Them Right), in British English
 import * as ama from 'citestyle/styles/ama'                    // AMA 11th edition
 import * as nature from 'citestyle/styles/nature'              // Nature
 import * as science from 'citestyle/styles/science'            // Science (AAAS)

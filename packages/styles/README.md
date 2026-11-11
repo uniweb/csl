@@ -19,7 +19,7 @@ Requires `@citestyle/core` as a peer dependency (installed automatically).
 | `@citestyle/styles/apa` | American Psychological Association 7th ed. | Author-date |
 | `@citestyle/styles/mla` | Modern Language Association 9th ed. | Author-date |
 | `@citestyle/styles/chicago-author-date` | Chicago Manual of Style 17th ed. | Author-date |
-| `@citestyle/styles/harvard` | Harvard — Cite Them Right 12th ed. | Author-date |
+| `@citestyle/styles/harvard` | Harvard — Cite Them Right 12th ed., in British English | Author-date |
 | `@citestyle/styles/ieee` | IEEE | Numeric |
 | `@citestyle/styles/vancouver` | Vancouver | Numeric |
 | `@citestyle/styles/ama` | American Medical Association 11th ed. | Numeric |
@@ -105,6 +105,8 @@ format(apa, book, { locale: de }).text
 ```
 
 Terms ("und", "Hrsg.", "S."), ordinals ("2. Aufl."), month names, date formats and quotation marks („…“) follow the pack. Without `locale`, a style formats in its default locale, resolved the same way.
+
+Cite Them Right is a British guide, but its style names no default locale, so `harvard` is compiled with British English (en-GB) as its default: without a pack it writes "(Accessed: 1 March 2024)", ‘single quotes’ with the comma outside them, and "3rd edn.". Pass `@citestyle/locales/en-US` for American English.
 
 ### Direct function calls (no registry, no helpers)
 
