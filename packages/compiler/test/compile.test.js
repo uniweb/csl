@@ -150,6 +150,26 @@ describe('compile', () => {
   })
 })
 
+describe('the style\'s notice', () => {
+  it('opens a compiled module with the style\'s title, link, authors and rights, kept by minifiers', () => {
+    const { code } = compile(readFileSync(join(fixturesDir, 'apa.csl'), 'utf-8'))
+    const notice = code.slice(0, code.indexOf('*/') + 2)
+    expect(notice.startsWith('/*! APA Style 7th edition\n')).toBe(true)
+    expect(notice).toContain(' * http://www.zotero.org/styles/apa\n')
+    expect(notice).toContain(' * Authors: Brenton M. Wiernik <zotero@wiernik.org> https://orcid.org/0000-0001-9560-6336; Andrew Dunning')
+    expect(notice).toContain(' * This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 License (http://creativecommons.org/licenses/by-sa/3.0/)')
+  })
+
+  it('names the contributors too', () => {
+    const { code } = compile(readFileSync(join(fixturesDir, 'nature.csl'), 'utf-8'))
+    expect(code.slice(0, code.indexOf('*/'))).toMatch(/\n \* Contributors: \S/)
+  })
+
+  it('has none for a style whose <info> holds nothing to credit', () => {
+    expect(compile(simpleStyle.replace(/<title>.*<\/title>/, '<title/>').replace(/<id>.*<\/id>/, '<id/>')).code.startsWith('// Generated')).toBe(true)
+  })
+})
+
 describe('compile APA', () => {
   let style
 

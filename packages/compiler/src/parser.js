@@ -73,14 +73,20 @@ function parseStyle(el) {
  * Parse <info> element for metadata.
  */
 function parseInfo(el) {
-  const info = { title: '', titleShort: '', id: '', links: [], categories: [], rights: '' }
+  const info = { title: '', titleShort: '', id: '', links: [], categories: [], rights: '', license: null, authors: [], contributors: [] }
   for (const child of childElements(el)) {
     const name = localName(child)
     if (name === 'title') info.title = textContent(child)
     else if (name === 'title-short') info.titleShort = textContent(child)
     else if (name === 'id') info.id = textContent(child)
-    else if (name === 'rights') info.rights = textContent(child)
-    else if (name === 'link') {
+    else if (name === 'rights') {
+      info.rights = textContent(child)
+      info.license = attr(child, 'license')
+    } else if (name === 'author' || name === 'contributor') {
+      const person = {}
+      for (const field of childElements(child)) person[localName(field)] = textContent(field)
+      info[name === 'author' ? 'authors' : 'contributors'].push(person)
+    } else if (name === 'link') {
       info.links.push({ href: attr(child, 'href'), rel: attr(child, 'rel') })
     } else if (name === 'category') {
       const field = attr(child, 'field')

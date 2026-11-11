@@ -83,7 +83,7 @@ const cite = apa.citation([{ item }])
 cite.text   // (Smith, 2024)
 
 // Style metadata
-apa.meta.title  // "American Psychological Association 7th edition"
+apa.meta.title  // "APA Style 7th edition"
 apa.meta.class  // "in-text"
 ```
 
@@ -127,7 +127,7 @@ const { code, meta } = compile(cslXml, { locale: 'en-US' })
 
 writeFileSync('apa.js', code)
 
-console.log(meta.title) // "American Psychological Association 7th edition"
+console.log(meta.title) // "APA Style 7th edition"
 console.log(meta.class) // "in-text"
 ```
 
@@ -191,6 +191,8 @@ Every CSL construct maps directly to JavaScript:
 | Locale terms (`"et al."`, `"Retrieved from"`) | Read at format time: the en-US terms the style can reach, its own `<locale>` elements and its default locale (as a pack) are inlined as data |
 
 The result is a module that exports `bibliography()`, `citation()`, `bibliographySort()`, and `meta` — pure functions with no XML and no interpretation. A locale pack passed at format time is merged over the style's locale data once and cached.
+
+Every module opens with its style's notice from `<info>`, in a `/*! … */` comment that minifiers keep: the style's title, its link, its authors and contributors, and its rights. CSL styles are licensed under CC BY-SA 3.0, which asks for that to travel with them.
 
 ## Compatibility
 
