@@ -58,95 +58,67 @@ const TITLE_STOP_WORDS = new Set([
 ])
 
 /**
- * Convert text to title case.
- * Capitalize all words except stop words (articles, prepositions, conjunctions).
- * Always capitalize first and last word.
+ * Convert text to title case, as CSL 1.0.2 defines it: in a lowercase or mixed-case string,
+ * capitalize the first character of each lowercase word and keep the case of every word that has
+ * capitals of its own (an acronym such as "AI", a name such as "iPhone" or "LLMs"); in an
+ * all-caps string, capitalize each word and lowercase the rest. Stop words (articles,
+ * prepositions, conjunctions) are lowercase unless they are the first or the last word, or
+ * follow a colon. Punctuation around a word ("AI:", "(and") is not part of it. Text inside
+ * `<span class="nocase">` is kept as written and still counts for first and last.
  *
  * @param {string} str
  * @returns {string}
  */
 export function titleCase(str) {
   if (!str) return ''
-  if (!str.includes('<span class="nocase">')) return _titleCaseInner(str)
-
-  // Nocase-aware title case: parse into segments (protected vs unprotected),
-  // then process all words as a single sequence for correct first/last detection
-  const segments = parseNocaseSegments(str)
-
-  // Collect all word tokens across segments for first/last word detection
-  const allWords = []
-  for (const seg of segments) {
-    const words = seg.text.split(/(\s+)/)
-    for (const w of words) {
-      if (w.trim()) allWords.push({ word: w, protect: seg.protect })
-    }
-  }
-
-  const totalWords = allWords.length
-  // Detect all-caps across full string (strip nocase spans for this check)
+  const segments = str.includes('<span class="nocase">') ? parseNocaseSegments(str) : [{ text: str, protect: false }]
   const plainStr = str.replace(NOCASE_RE, '$1')
-  const isAllCaps = plainStr === plainStr.toUpperCase() && /[a-zA-Z]/.test(plainStr)
+  // Detect all-caps across the full string (then its all-caps words are not acronyms)
+  const isAllCaps = plainStr === plainStr.toUpperCase() && /\p{L}/u.test(plainStr)
+  const totalWords = segments.reduce((n, seg) => n + seg.text.split(/\s+/).filter((w) => w.trim()).length, 0)
 
-  let globalWordIdx = 0
-  return segments.map(seg => {
-    if (seg.protect) {
-      // Count protected words but don't transform them
-      const words = seg.text.split(/(\s+)/)
-      for (const w of words) { if (w.trim()) globalWordIdx++ }
-      return seg.text
-    }
-
-    const words = seg.text.split(/(\s+)/)
-    return words.map(word => {
-      if (!word.trim()) return word
-      globalWordIdx++
-
-      if (/[a-z][A-Z]|[A-Z][a-z].*[A-Z]/.test(word)) return word
-      if (/^[A-Z]{2,}$/.test(word) && !isAllCaps) return word
-
-      if (globalWordIdx === 1 || globalWordIdx === totalWords) {
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-      }
-      if (TITLE_STOP_WORDS.has(word.toLowerCase())) {
-        return word.toLowerCase()
-      }
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    }).join('')
-  }).join('')
+  let index = 0
+  let afterColon = false
+  return segments
+    .map((seg) =>
+      seg.text
+        .split(/(\s+)/)
+        .map((word) => {
+          if (!word.trim()) return word
+          index++
+          const out = seg.protect
+            ? word
+            : titleCaseWord(word, { first: index === 1, last: index === totalWords, afterColon, isAllCaps })
+          afterColon = ENDS_WITH_COLON.test(word)
+          return out
+        })
+        .join('')
+    )
+    .join('')
 }
 
-function _titleCaseInner(str) {
-  if (!str) return ''
-  const words = str.split(/(\s+)/)
-  let wordIndex = 0
-  const totalWords = words.filter(w => w.trim()).length
-  // Detect if the entire string is all-caps (then individual all-caps words aren't abbreviations)
-  const isAllCaps = str === str.toUpperCase() && /[a-zA-Z]/.test(str)
+/** A word's leading punctuation, the word, and its trailing punctuation (and formatting tokens). */
+const WORD_PARTS = /^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/su
 
-  return words
-    .map(word => {
-      if (!word.trim()) return word // preserve whitespace
-      wordIndex++
+/** A word that closes on a colon, maybe before formatting tokens: the next word starts a subtitle. */
+const ENDS_WITH_COLON = /:[--]*$/
 
-      // CSL spec: words with internal capitals (e.g., "OpenAI", "JavaScript")
-      // or all-caps words in a mixed-case string are treated as intentional
-      // casing and preserved as-is.
-      if (/[a-z][A-Z]|[A-Z][a-z].*[A-Z]/.test(word)) return word
-      // Preserve all-caps words (2+ chars) when the whole string isn't all-caps
-      if (/^[A-Z]{2,}$/.test(word) && !isAllCaps) return word
-
-      // Always capitalize first and last word
-      if (wordIndex === 1 || wordIndex === totalWords) {
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-      }
-      // Don't capitalize stop words
-      if (TITLE_STOP_WORDS.has(word.toLowerCase())) {
-        return word.toLowerCase()
-      }
-      // Capitalize first letter, lowercase rest
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    })
-    .join('')
+/**
+ * One word of a title-cased string.
+ *
+ * @param {string} word - a word with any punctuation around it
+ * @param {{ first: boolean, last: boolean, afterColon: boolean, isAllCaps: boolean }} at
+ */
+function titleCaseWord(word, { first, last, afterColon, isAllCaps }) {
+  const [, pre, core, post] = word.match(WORD_PARTS)
+  if (!core) return word
+  const lower = core.toLowerCase()
+  const stop = TITLE_STOP_WORDS.has(lower) && !first && !last && !afterColon
+  if (isAllCaps) return pre + (stop ? lower : core.charAt(0).toUpperCase() + core.slice(1).toLowerCase()) + post
+  if (core === lower) return pre + (stop ? core : core.charAt(0).toUpperCase() + core.slice(1)) + post
+  // A word with capitals of its own keeps them, save a stop word capitalized mid-title ("And")
+  if (stop && core === core.charAt(0) + core.slice(1).toLowerCase()) return pre + lower + post
+  return word
 }
 
 /**

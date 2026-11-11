@@ -24,6 +24,27 @@ describe('titleCase', () => {
     expect(titleCase('learning JavaScript today')).toBe('Learning JavaScript Today')
     expect(titleCase('the PhD thesis')).toBe('The PhD Thesis')
   })
+
+  // An acronym before a colon read as "AI:" and became "Ai:", and "LLMs" became "Llms".
+  it('keeps a word with capitals of its own, punctuation and all', () => {
+    expect(titleCase('Bridging human expertise and AI: a framework')).toBe('Bridging Human Expertise and AI: A Framework')
+    expect(titleCase('understanding context in LLMs')).toBe('Understanding Context in LLMs')
+    expect(titleCase('DNA, RNA, and you')).toBe('DNA, RNA, and You')
+  })
+
+  it('capitalizes a stop word after a colon, as CSL says', () => {
+    expect(titleCase('deep learning: a survey of the field')).toBe('Deep Learning: A Survey of the Field')
+  })
+
+  it('reads a stop word through the punctuation around it', () => {
+    expect(titleCase('notes on war (and peace) in the north')).toBe('Notes on War (and Peace) in the North')
+    expect(titleCase('the beginning, and the end')).toBe('The Beginning, and the End')
+  })
+
+  it('lowercases a stop word capitalized mid-title, and keeps every other capitalized word', () => {
+    expect(titleCase('Pride And Prejudice')).toBe('Pride and Prejudice')
+    expect(titleCase('Fairness-aware Machine Learning')).toBe('Fairness-aware Machine Learning')
+  })
 })
 
 describe('sentenceCase', () => {
