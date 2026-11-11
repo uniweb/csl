@@ -1,0 +1,60 @@
+{
+  "name": "@citestyle/locales",
+  "version": "1.0.0",
+  "description": "CSL locale packs: format a compiled citation style in any of the official CSL languages",
+  "author": "Uniweb",
+  "homepage": "https://github.com/uniweb/csl/tree/main/packages/locales",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uniweb/csl.git",
+    "directory": "packages/locales"
+  },
+  "keywords": [
+    "csl",
+    "citation",
+    "locale",
+    "i18n",
+    "localization",
+    "citation-style-language",
+    "bibliography"
+  ],
+  "type": "module",
+  "exports": {
+    "./locales/v1/*": "./dist/locales/v1/*",
+    "./package.json": "./package.json",
+    "./*": {
+      "types": "./types.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./types.d.ts"
+      ]
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "types.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node build.js",
+    "prepack": "node build.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@citestyle/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@citestyle/compiler": "workspace:*",
+    "@citestyle/core": "workspace:*",
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "license": "MIT"
+}

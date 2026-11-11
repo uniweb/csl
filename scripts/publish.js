@@ -38,6 +38,7 @@ const PACKAGES = [
   { name: '@citestyle/types', path: 'packages/types' },
   { name: '@citestyle/core', path: 'packages/core' },
   { name: '@citestyle/compiler', path: 'packages/compiler' },
+  { name: '@citestyle/locales', path: 'packages/locales' },
   { name: '@citestyle/registry', path: 'packages/registry' },
   { name: '@citestyle/styles', path: 'packages/styles' },
   { name: '@citestyle/bibtex', path: 'packages/bibtex' },
