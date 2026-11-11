@@ -360,18 +360,26 @@ function parseNames(el) {
       }
     } else if (name === 'label') {
       node.labelNode = parseLabel(child)
+      // CSL: the label renders on the side of the name it sits on ("edited by" before, "(Eds.)" after)
+      node.labelBefore = !node.nameNode
     } else if (name === 'substitute') {
       node.substitute = {
         type: 'substitute',
         children: parseRenderingElements(child),
       }
-      // CSL spec: substitute <names> without children inherit from parent
-      for (const sub of node.substitute.children) {
-        if (sub.type === 'names' && !sub.nameNode) {
-          sub.nameNode = node.nameNode
-          if (!sub.etAlNode) sub.etAlNode = node.etAlNode
-          if (!sub.labelNode) sub.labelNode = node.labelNode
-        }
+    }
+  }
+  // With no <name>, the names render first and the label after them
+  if (!node.nameNode) node.labelBefore = false
+
+  // CSL spec: substitute <names> without children inherit from parent
+  for (const sub of node.substitute?.children || []) {
+    if (sub.type === 'names' && !sub.nameNode) {
+      sub.nameNode = node.nameNode
+      if (!sub.etAlNode) sub.etAlNode = node.etAlNode
+      if (!sub.labelNode) {
+        sub.labelNode = node.labelNode
+        sub.labelBefore = node.labelBefore
       }
     }
   }

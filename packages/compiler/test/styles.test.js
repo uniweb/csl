@@ -265,6 +265,16 @@ describe('HTML structured output', () => {
     expect(cit.html).toMatch(/<\/span>$/)
   })
 
+  // A <names> label renders for every variable, on the side of the name it sits on in the style.
+  // ⛔ It rendered only for a second variable onward, after the names: APA lost its "(Eds.)".
+  it('labels the editors of a chapter\'s book, and the editors standing in for an author', () => {
+    expect(apaStyle.bibliography(chapter).text).toBe(
+      'LeCun, Y. (2016). Deep learning fundamentals. In I. Goodfellow (Ed.), Deep learning (pp. 1\u201325). MIT Press.'
+    )
+    const edited = { type: 'book', title: 'Edited volume', editor: [{ family: 'Smith', given: 'Jane' }, { family: 'Doe', given: 'John' }], issued: { 'date-parts': [[2015]] }, publisher: 'Oxford University Press' }
+    expect(apaStyle.bibliography(edited).text).toMatch(/^Smith, J\., & Doe, J\. \(Eds\.\)\. \(2015\)\. Edited volume/)
+  })
+
   // APA abbreviates page and paragraph locators (APA 7, 8.13): <if locator="page"> tests the cite's
   // locator type. ⛔ It tested ctx.locator, never set, so APA printed "Page 42".
   it('labels page and paragraph locators as APA does', () => {

@@ -714,14 +714,18 @@ function generateNamesElement(node, ctx, indent) {
 
     lines.push(`${indent}  ${v} = formatNames(${accessor}, _nameConfig(ctx, ${JSON.stringify(elementOpts)}))`)
 
-    // Label after names (e.g., "(Ed.)" for editors)
-    if (node.labelNode && i > 0) {
+    // The variable's label, with its own affixes, on the side of the name it sits on in the style:
+    // after it ("Goodfellow & Bengio (Eds.)") or before it ("edited by Goodfellow and Bengio").
+    // ⛔ It rendered only for a second variable onward, always after the names, with a space added.
+    if (node.labelNode) {
       const labelGen = generateLabelElement(
         { ...node.labelNode, variable },
         ctx, indent + '  '
       )
       if (labelGen.code) lines.push(labelGen.code)
-      lines.push(`${indent}  if (${v}) ${v} += ' ' + ${labelGen.expr}`)
+      lines.push(node.labelBefore
+        ? `${indent}  if (${v}) ${v} = ${labelGen.expr} + ${v}`
+        : `${indent}  if (${v}) ${v} += ${labelGen.expr}`)
     }
 
     // Semantic wrapping for this name variable
