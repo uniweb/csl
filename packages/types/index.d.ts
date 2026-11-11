@@ -450,6 +450,24 @@ export declare function readLocaleFile(xml: string): {
 /** Read a `<locale>` DOM element (a locale file's root, or a style's own) into a locale layer */
 export declare function readLocaleLayer(el: unknown): Omit<LocalePack, 'version' | 'lang'> & { lang?: string }
 
+/** A locale's data from the CSL locale files the compiler carries, with CSL's dialect fallback */
+export declare function localeData(lang: string): {
+  layer: Omit<LocalePack, 'version'>
+  sources: Array<{ file: string; info: ReturnType<typeof readLocaleFile>['info'] }>
+}
+
+/** One CSL locale file the compiler carries, read; null when there is none */
+export declare function readLocale(lang: string): ({ file: string } & ReturnType<typeof readLocaleFile>) | null
+
+/** The CSL locales the compiler carries a file for, sorted */
+export declare function availableLocales(): string[]
+
+/** Each language's primary dialect, from the CSL project's table */
+export declare function primaryDialects(): Record<string, string>
+
+/** Where the compiler's locale files come from */
+export declare function localeSource(): { repository: string; commit: string; date: string; license: string; licenseUrl: string }
+
 // ---------------------------------------------------------------------------
 // Core helpers
 // ---------------------------------------------------------------------------

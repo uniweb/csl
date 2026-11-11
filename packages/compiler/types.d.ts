@@ -1,1 +1,1 @@
-export { compile, parse, resolveLocale, generate, readLocaleFile, readLocaleLayer, CompileOptions, CompileResult, LocalePack } from '@citestyle/types'
+export { compile, parse, resolveLocale, generate, readLocaleFile, readLocaleLayer, localeData, readLocale, availableLocales, primaryDialects, localeSource, CompileOptions, CompileResult, LocalePack } from '@citestyle/types'

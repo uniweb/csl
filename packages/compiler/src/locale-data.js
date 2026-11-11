@@ -9,12 +9,87 @@
  * of nouns.
  */
 import { DOMParser } from '@xmldom/xmldom'
-import { readFileSync } from 'node:fs'
+import { mergeLayers } from '@citestyle/core'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+/**
+ * The official CSL locale files, unchanged from the commit locales/source.json names, with the CSL
+ * project's primary-dialect table (locales.json). They are CC BY-SA 3.0, like every CSL locale file.
+ */
 const LOCALES_DIR = join(__dirname, '..', 'locales')
+
+// The primary dialects CSL 1.0.2 lists (specification, "Locale Fallback"). locales.json, the CSL
+// project's table, must agree; it also covers the languages the specification doesn't list.
+const SPEC_PRIMARY_DIALECTS = { de: 'de-DE', en: 'en-US', es: 'es-ES', fr: 'fr-FR', pt: 'pt-PT', zh: 'zh-CN' }
+
+let primaries
+/** Each language's primary dialect: { fr: 'fr-FR', pt: 'pt-PT', … } */
+export function primaryDialects() {
+  if (!primaries) {
+    primaries = JSON.parse(readFileSync(join(LOCALES_DIR, 'locales.json'), 'utf-8'))['primary-dialects']
+    for (const [language, primary] of Object.entries(SPEC_PRIMARY_DIALECTS)) {
+      if (primaries[language] !== primary) {
+        throw new Error(`locales.json makes ${primaries[language]} the primary dialect of "${language}"; CSL 1.0.2 says ${primary}`)
+      }
+    }
+  }
+  return primaries
+}
+
+/** Where the locale files come from: { repository, commit, date, license, licenseUrl } */
+export function localeSource() {
+  return JSON.parse(readFileSync(join(LOCALES_DIR, 'source.json'), 'utf-8'))
+}
+
+/** The locales the compiler has a file for, sorted: ['af-ZA', 'ar', …] */
+export function availableLocales() {
+  return readdirSync(LOCALES_DIR)
+    .filter((f) => /^locales-.+\.xml$/.test(f))
+    .map((f) => f.slice('locales-'.length, -'.xml'.length))
+    .sort()
+}
+
+const files = new Map()
+/**
+ * One locale file, read: { file, layer, info }, or null when there is none for `lang`.
+ *
+ * @param {string} lang
+ */
+export function readLocale(lang) {
+  if (!files.has(lang)) {
+    const file = `locales-${lang}.xml`
+    const path = join(LOCALES_DIR, file)
+    files.set(lang, existsSync(path) ? { file, ...readLocaleFile(readFileSync(path, 'utf-8')) } : null)
+  }
+  return files.get(lang)
+}
+
+/**
+ * A locale's data, as CSL's fallback assembles it from the locale files: the dialect's file over its
+ * language's primary dialect (fr-CA over fr-FR); for a dialect with no file of its own, its
+ * language's primary dialect (fr-CH takes fr-FR's), under its own lang. A language alone is its
+ * primary dialect (fr is fr-FR), as CSL says. en-US is the base every style carries, so it is never
+ * merged in. A locale of a language with no file has no data.
+ *
+ * @param {string} lang - e.g. 'fr-CA'
+ * @returns {{ layer: object, sources: Array<{ file: string, info: object }> }}
+ */
+export function localeData(lang) {
+  const language = lang.split('-')[0]
+  const primary = primaryDialects()[language]
+  if (lang === language && primary && primary !== lang) return localeData(primary)
+  const own = readLocale(lang)
+  const base = primary && primary !== lang && primary !== 'en-US' ? readLocale(primary) : null
+  const sources = [base, own].filter(Boolean).map(({ file, info }) => ({ file, info }))
+  if (own && base) return { layer: mergeLayers(base.layer, own.layer), sources }
+  if (own) return { layer: own.layer, sources }
+  if (base) return { layer: { ...base.layer, lang }, sources }
+  return { layer: { lang }, sources }
+}
 
 /**
  * Read a CSL locale file.
@@ -29,12 +104,12 @@ export function readLocaleFile(xml) {
 }
 
 /**
- * The en-US locale file the compiler ships, as a layer: the base every compiled style carries.
+ * The en-US locale file, as a layer: the base every compiled style carries.
  *
  * @returns {object}
  */
 export function loadEnglishLayer() {
-  return readLocaleFile(readFileSync(join(LOCALES_DIR, 'locales-en-US.xml'), 'utf-8')).layer
+  return readLocale('en-US').layer
 }
 
 /**

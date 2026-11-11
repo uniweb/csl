@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'n
 import { join, basename, extname, resolve, dirname } from 'node:path'
 import { compile } from './compile.js'
 import { parse } from './parser.js'
-import { loadLocaleFile } from './locale.js'
+import { localeData } from './locale-data.js'
 
 const args = process.argv.slice(2)
 
@@ -47,9 +47,8 @@ Commands:
 Options (compile):
   -o, --output <path>   Output file (single input) or directory (batch mode)
   --locale <lang>       The style's default locale, comma-separated for one module per locale
-                        (default: the style's default-locale, else en-US). The compiler ships
-                        en-US, en-GB, de-DE and pt-BR; for any language, pass a locale pack from
-                        @citestyle/locales when formatting instead
+                        (default: the style's default-locale, else en-US): any CSL locale. One
+                        module formats in every language: pass a pack from @citestyle/locales
   --format <esm|cjs>    Output format (default: esm)
 
 Examples:
@@ -83,13 +82,10 @@ function runCompile(args) {
   const isBatch = files.length > 1 || (output && isDirectory(output))
   let exitCode = 0
 
-  // A default locale the compiler has no file for resolves to en-US terms: say so, and what to do
+  // A default locale of a language CSL has no locale file for resolves to en-US terms: say so
   for (const locale of locales) {
-    if (locale && !loadLocaleFile(locale) && !loadLocaleFile(locale.split('-')[0])) {
-      console.error(
-        `⚠ --locale ${locale}: the compiler has no ${locale} locale file, so the style's default stays en-US. ` +
-          `To format in ${locale}, pass the @citestyle/locales/${locale} pack when formatting: bibliography(item, { locale }).`,
-      )
+    if (locale && locale !== 'en-US' && localeData(locale).sources.length === 0) {
+      console.error(`⚠ --locale ${locale}: CSL has no locale file for that language, so the style's terms stay en-US.`)
     }
   }
 

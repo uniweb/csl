@@ -18,7 +18,7 @@ npm install -D @citestyle/compiler
 # Compile to a file
 npx citestyle compile apa.csl -o apa.js
 
-# Compile with another default locale (the compiler ships en-US, en-GB, de-DE, pt-BR)
+# Compile with another default locale: any official CSL locale
 npx citestyle compile apa.csl --locale de-DE -o apa-de.js
 
 # Batch compile every .csl file in a directory
@@ -104,6 +104,10 @@ items.sort((a, b) => apa.bibliographySort(a, b, { locale: fr })) // sort keys in
 
 The style resolves the pack once (CSL's locale fallback: its own `<locale>` elements over the pack, the pack over en-US) and keeps the result. Without `locale` it formats in its default locale, which `--locale` sets at compile time.
 
+### Locale files
+
+The compiler carries the official [CSL locale files](https://github.com/citation-style-language/locales) for every language, unchanged from the commit `locales/source.json` names: a style's default locale comes from them, and so do the packs of [`@citestyle/locales`](../locales). They are the work of the [CSL project](https://citationstyles.org/) and its translators, licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+
 ## Programmatic API
 
 ```javascript
@@ -160,6 +164,10 @@ const ast = parse(cslXml)
 const locale = resolveLocale('en-US', ast.localeOverrides)
 const code = generate(ast, locale, { format: 'esm' })
 ```
+
+### `localeData(lang)` and the locale files
+
+`localeData('fr-CA')` gives a locale's data as CSL's fallback assembles it from the locale files: the dialect's file over its language's primary dialect (fr-FR); a dialect with no file takes its primary dialect's, and a language alone is its primary dialect. `availableLocales()`, `primaryDialects()`, `readLocale(lang)` and `localeSource()` list the files, CSL's primary-dialect table, read one file, and say which commit they come from.
 
 ### `readLocaleFile(xml)` and `readLocaleLayer(element)`
 

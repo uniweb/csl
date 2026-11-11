@@ -3,7 +3,7 @@
 /**
  * Build script for @citestyle/locales
  *
- * Generates, from the CSL locale files in vendor/ (see generate.js):
+ * Generates, from the CSL locale files @citestyle/compiler carries (see generate.js):
  *
  *   dist/<lang>.js                 one ES module per locale, its pack as the default export
  *   dist/<language>.js             the pack of a language's primary dialect (fr → fr-FR)

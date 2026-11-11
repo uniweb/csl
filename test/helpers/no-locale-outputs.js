@@ -7,8 +7,8 @@
  * cites with each locator label; a cluster; the sort order; formatAll; a registry run with
  * disambiguation and collapsing); and each CSL suite fixture, over its own input and the corpus.
  *
- * The record in test/fixtures/no-locale-outputs.json was made with the compiler before it read
- * locales at format time. After a change meant to alter some style's output, write a new one:
+ * test/fixtures/no-locale-outputs.json is the record. After a change meant to alter some style's
+ * output, write a new one:
  *
  *   node test/helpers/no-locale-outputs.js --write
  *

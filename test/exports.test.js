@@ -50,6 +50,8 @@ describe('@citestyle/compiler exports', () => {
     expect(typeof compiler.generate).toBe('function')
     expect(typeof compiler.readLocaleFile).toBe('function')
     expect(typeof compiler.readLocaleLayer).toBe('function')
+    expect(typeof compiler.localeData).toBe('function')
+    expect(typeof compiler.availableLocales).toBe('function')
   })
 })
 

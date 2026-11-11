@@ -8,10 +8,10 @@ import { afterAll } from 'vitest'
 import { buildPacks, buildIndex } from '../generate.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const VENDOR = join(__dirname, '..', 'vendor')
+const LOCALE_FILES = join(__dirname, '..', '..', 'compiler', 'locales')
 const built = buildPacks()
 const { packs } = built
-const xmlLangs = readdirSync(VENDOR).filter((f) => /^locales-.+\.xml$/.test(f)).map((f) => f.slice(8, -4)).sort()
+const xmlLangs = readdirSync(LOCALE_FILES).filter((f) => /^locales-.+\.xml$/.test(f)).map((f) => f.slice(8, -4)).sort()
 
 describe('packs', () => {
   it('makes one pack per official CSL locale file, in format version 1', () => {
