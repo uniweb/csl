@@ -378,17 +378,26 @@ function parseNames(el) {
   // With no <name>, the names render first and the label after them
   if (!node.nameNode) node.labelBefore = false
 
-  // CSL spec: substitute <names> without children inherit from parent
-  for (const sub of node.substitute?.children || []) {
-    if (sub.type === 'names' && !sub.nameNode) {
-      sub.nameNode = node.nameNode
-      if (!sub.etAlNode) sub.etAlNode = node.etAlNode
-      if (!sub.labelNode) {
-        sub.labelNode = node.labelNode
-        sub.labelBefore = node.labelBefore
+  // CSL: a <names> in the <substitute> with no <name> of its own inherits this one's <name>, <et-al>
+  // and <label>, wherever it sits there: CMOS 18 puts its editors in a <choose>
+  const inherit = (children) => {
+    for (const sub of children || []) {
+      if (sub.type === 'names' && !sub.nameNode) {
+        sub.nameNode = node.nameNode
+        if (!sub.etAlNode) sub.etAlNode = node.etAlNode
+        if (!sub.labelNode) {
+          sub.labelNode = node.labelNode
+          sub.labelBefore = node.labelBefore
+        }
+      } else if (sub.type === 'choose') {
+        for (const cond of sub.conditions) inherit(cond.children)
+        inherit(sub.else?.children)
+      } else if (sub.type === 'group') {
+        inherit(sub.children)
       }
     }
   }
+  inherit(node.substitute?.children)
 
   return node
 }

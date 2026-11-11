@@ -158,6 +158,16 @@ describe('Chicago Author-Date 18th edition', () => {
     expect(style.citation([{ item: article, locator: '42' }]).text).toBe('(Smith and Jones 2024, 42)')
     expect(style.citation([{ item: article, locator: '3', label: 'chapter' }]).text).toBe('(Smith and Jones 2024, chap. 3)')
   })
+
+  // The style's <substitute> puts editors in a <choose>; a <names> there with no <name> of its own
+  // takes the author's (CSL). ⛔ It took none, so "J. Smith, J. Doe. 2015." and "(J. Smith, J. Doe 2015)".
+  it('names the editors standing in for an author as it names authors', () => {
+    const edited = { type: 'book', title: 'Edited volume', editor: [{ family: 'Smith', given: 'Jane' }, { family: 'Doe', given: 'John' }], issued: { 'date-parts': [[2015]] }, publisher: 'Oxford University Press' }
+    expect(style.bibliography(edited).text).toMatch(/^Smith, Jane, and John Doe, eds\. 2015\. Edited Volume\./)
+    expect(style.citation([{ item: edited }]).text).toBe('(Smith and Doe 2015)')
+    const one = { ...edited, editor: [{ family: 'Smith', given: 'Jane' }] }
+    expect(style.bibliography(one).text).toMatch(/^Smith, Jane, ed\. 2015\./)
+  })
 })
 
 // ── IEEE ─────────────────────────────────────────────────────────────────────
