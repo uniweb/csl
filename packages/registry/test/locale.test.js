@@ -78,6 +78,6 @@ describe('format helpers in a locale', () => {
     expect(format(apa, clone(items[0]), { locale: fr }).text).toContain('(3ᵉ éd.)')
     expect(formatAll(apa, clone(items), { locale: de }).map((e) => e.text)[0]).toContain('(3. Aufl.)')
     expect(formatCitation(apa, [{ item: clone(items[1]), locator: '4', label: 'page' }], { locale: de }).text)
-      .toBe('(Smith & Jones, 2024, Seite 4)')
+      .toBe('(Smith & Jones, 2024, S. 4)')
   })
 })

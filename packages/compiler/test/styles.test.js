@@ -151,6 +151,13 @@ describe('Chicago Author-Date 18th edition', () => {
     expect(cit.text).toContain('Smith and Jones 2024')
     expect(cit.text).toContain('Norman 2013')
   })
+
+  // <if locator="page"> tests the cite's locator type: Chicago cites a page by its number alone
+  it('cites a page by its number, and other locators with their label', () => {
+    expect(style.citation([{ item: article, locator: '42', label: 'page' }]).text).toBe('(Smith and Jones 2024, 42)')
+    expect(style.citation([{ item: article, locator: '42' }]).text).toBe('(Smith and Jones 2024, 42)')
+    expect(style.citation([{ item: article, locator: '3', label: 'chapter' }]).text).toBe('(Smith and Jones 2024, chap. 3)')
+  })
 })
 
 // ── IEEE ─────────────────────────────────────────────────────────────────────
@@ -256,6 +263,15 @@ describe('HTML structured output', () => {
     const cit = apaStyle.citation([{ item: article }])
     expect(cit.html).toMatch(/^<span class="csl-citation">/)
     expect(cit.html).toMatch(/<\/span>$/)
+  })
+
+  // APA abbreviates page and paragraph locators (APA 7, 8.13): <if locator="page"> tests the cite's
+  // locator type. ⛔ It tested ctx.locator, never set, so APA printed "Page 42".
+  it('labels page and paragraph locators as APA does', () => {
+    expect(apaStyle.citation([{ item: article, locator: '42', label: 'page' }]).text).toBe('(Smith & Jones, 2024, p. 42)')
+    expect(apaStyle.citation([{ item: article, locator: '42-45', label: 'page' }]).text).toBe('(Smith & Jones, 2024, pp. 42-45)')
+    expect(apaStyle.citation([{ item: article, locator: '12', label: 'paragraph' }]).text).toBe('(Smith & Jones, 2024, para. 12)')
+    expect(apaStyle.citation([{ item: article, locator: '3', label: 'chapter' }]).text).toBe('(Smith & Jones, 2024, Chapter 3)')
   })
 
   it('escapes HTML entities in text content', () => {

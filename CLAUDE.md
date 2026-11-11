@@ -266,7 +266,6 @@ Run all tests: `npx vitest run`.
 
 ### Known defects
 
-- `<if locator="…">` tests `ctx.locator`, which is never set (APA prints "Page 42" for "p. 42").
 - A names label (`(Eds.)`, "edited by") renders only for a `<names>` element's second variable onward.
 
 ### Known limitations (skip markers in test runner)

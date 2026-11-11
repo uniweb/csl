@@ -19,12 +19,12 @@
 import { mergeLayers, LOCALE_FORMAT } from '@citestyle/core'
 import { loadEnglishLayer } from './locale-data.js'
 
-/** The terms a cite's locator label can name (CSL 1.0.2's locator types, and two older names). */
+/** The terms a cite's locator label can name (CSL 1.0.2's locator types, and the older "number"). */
 export const LOCATOR_TERMS = [
   'act', 'appendix', 'article-locator', 'book', 'canon', 'chapter', 'column', 'elocation', 'equation',
   'figure', 'folio', 'issue', 'line', 'note', 'opus', 'page', 'paragraph', 'part', 'rule', 'scene',
   'section', 'sub-verbo', 'supplement', 'table', 'timestamp', 'title-locator', 'verse', 'version',
-  'volume', 'sub verbo', 'number',
+  'volume', 'number',
 ]
 
 const ORDINAL_SET = /^ordinal(-\d\d)?$/

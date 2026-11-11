@@ -289,7 +289,8 @@ function generateCitation(citNode, ctx) {
   const rendered = cites.map(cite => {
     let ctx = cite._disambig ? { ..._outerCtx, _disambig: cite._disambig } : _outerCtx
     let item = cite.item || cite
-    if (cite.locator != null) { item = { ...item, locator: cite.locator, _locatorLabel: cite.label || 'page' } }
+    // The locator's type: its label, "page" when it has none; CSL 1.0.1's "sub verbo" is "sub-verbo"
+    if (cite.locator != null) { item = { ...item, locator: cite.locator, _locatorLabel: cite.label === 'sub verbo' ? 'sub-verbo' : cite.label || 'page' } }
 ${body.code}
     return [${body.parts.join(', ')}].filter(v => v !== '').join('')
   })
@@ -671,7 +672,8 @@ function generateConditionTest(cond, ctx) {
     } else if (t.test === 'position') {
       for (const v of t.values) allChecks.push(`ctx.position === ${JSON.stringify(v)}`)
     } else if (t.test === 'locator') {
-      for (const v of t.values) allChecks.push(`ctx.locator === ${JSON.stringify(v)}`)
+      // The cite's locator type (set only on a cite with a locator); ⛔ this tested ctx.locator, never set
+      for (const v of t.values) allChecks.push(`item._locatorLabel === ${JSON.stringify(v)}`)
     }
   }
 
