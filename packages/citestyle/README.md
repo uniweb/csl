@@ -269,4 +269,4 @@ CSL spec coverage is comprehensive for web use cases — the complete rendering 
 
 ## License
 
-MIT. The locale packs come from the [CSL project](https://citationstyles.org/)'s locale files and are licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+MIT. The pre-compiled styles and the locale packs this package re-exports are those of `@citestyle/styles` and `@citestyle/locales`, made from the [CSL project](https://citationstyles.org/)'s styles and locale files and licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/); the package itself ships none of that data, only the modules that re-export it.

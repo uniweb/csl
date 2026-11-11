@@ -106,7 +106,7 @@ The style resolves the pack once (CSL's locale fallback: its own `<locale>` elem
 
 ### Locale files
 
-The compiler carries the official [CSL locale files](https://github.com/citation-style-language/locales) for every language, unchanged from the commit `locales/source.json` names: a style's default locale comes from them, and so do the packs of [`@citestyle/locales`](../locales). They are the work of the [CSL project](https://citationstyles.org/) and its translators, licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+The compiler carries the official [CSL locale files](https://github.com/citation-style-language/locales) for every language, unchanged from the commit `locales/source.json` names: a style's default locale comes from them, and so do the packs of [`@citestyle/locales`](../locales). They are the work of the [CSL project](https://citationstyles.org/) and its translators, licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). The compiler's own code is MIT-licensed; its `package.json` says `MIT AND CC-BY-SA-3.0`.
 
 ## Programmatic API
 
