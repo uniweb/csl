@@ -267,6 +267,13 @@ Run all tests: `npx vitest run`.
 ### Known defects
 
 - A `<names>` element with several variables renders the first non-empty one only, not each of them.
+- `<text variable="..." form="short"/>` renders the long form: `title-short`, `container-title-short` and the other short forms are never read. APA cites a work with no author by its whole title, "(Anonymous Book of Things: A Subtitle, 2020)".
+- A bibliography sort key is a macro's rendered output, formatting and semantic markers included, compared by code unit: entries sort by their markers before their names. Chicago and MLA list authored works, then edited books, then works with no author; APA lists works with no author first and edited books last.
+- A group's check runs each macro it calls and counts any output, a term's too: a group whose macro prints "In" and an empty variable is kept (CSL test suite, magic_SubsequentAuthorSubstituteNotFooled: "“Title.” In . London: …").
+- A citation does not move punctuation inside quotation marks as the locale says (`punctuation-in-quote`, as en-US has it); a bibliography does. APA cites an unsigned article as (“An Unsigned Report”, 2021), not (“An Unsigned Report,” 2021).
+- The registry adds no year suffix to cites that stay alike: two works with no author, the same title and year, cite as "(Anonymous, 2020)" twice in APA; in APSA, so do two works by the same authors in the same year, "(Jane Smith and Doe 2015)", with a given name added that does not tell them apart.
+- The CSL locale files for Portuguese, which the compiler carries unchanged, give `edition` no gender, so its ordinal is the neuter one: pt-BR prints "2º ed." for "2ª ed." (and has a feminine ordinal for 1 only), and pt-PT, whose ordinals are all gendered, prints none, "2 ed.".
+- An "and" term that ends in a space of its own still gets the delimiter's spaces: the CSL test suite's Hebrew "ו" + U+2008 PUNCTUATION SPACE (name_HebrewAnd) joins "תפוח" and "תפוז" as `תפוח ו<U+2008> תפוז`, where the suite expects `תפוחו<U+2008>תפוז`.
 
 ### Known limitations (skip markers in test runner)
 - `position=`, `ibid` — footnote-centric features
