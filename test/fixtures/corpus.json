@@ -1,0 +1,1198 @@
+{
+  "items": [
+    {
+      "id": "art1",
+      "type": "article-journal",
+      "title": "Neural correlates of consciousness",
+      "author": [
+        {
+          "family": "Smith",
+          "given": "John Andrew"
+        },
+        {
+          "family": "Jones",
+          "given": "Barbara Carol"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2024
+          ]
+        ]
+      },
+      "container-title": "Nature Neuroscience",
+      "volume": "27",
+      "issue": "3",
+      "page": "45-67",
+      "DOI": "10.1038/nn.2024",
+      "citation-number": 1
+    },
+    {
+      "id": "art2",
+      "type": "article-journal",
+      "title": "Why do we cite? A study of reference practices.",
+      "author": [
+        {
+          "family": "Smith",
+          "given": "John"
+        },
+        {
+          "family": "Jones",
+          "given": "Barbara"
+        },
+        {
+          "family": "Brown",
+          "given": "Charles"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2019,
+            3,
+            15
+          ]
+        ]
+      },
+      "container-title": "Journal of Documentation",
+      "container-title-short": "J. Doc.",
+      "volume": "75",
+      "issue": "2",
+      "page": "321-328",
+      "DOI": "10.1108/JD-01-2019-0001",
+      "URL": "https://example.org/jd/75/2",
+      "accessed": {
+        "date-parts": [
+          [
+            2024,
+            1,
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "art3",
+      "type": "article-journal",
+      "title": "A \"quoted\" phrase in a title",
+      "author": [
+        {
+          "family": "Smith",
+          "given": "John"
+        },
+        {
+          "family": "Jones",
+          "given": "Barbara"
+        },
+        {
+          "family": "Brown",
+          "given": "Charles"
+        },
+        {
+          "family": "Taylor",
+          "given": "Dana"
+        },
+        {
+          "family": "Wilson",
+          "given": "Eve"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2021,
+            11
+          ]
+        ]
+      },
+      "container-title": "Science",
+      "volume": "374",
+      "page": "1101-1109",
+      "issue": "6571"
+    },
+    {
+      "id": "art4",
+      "type": "article-journal",
+      "title": "Large collaborations at scale",
+      "author": [
+        {
+          "family": "AuthorA",
+          "given": "Given0"
+        },
+        {
+          "family": "AuthorB",
+          "given": "Given1"
+        },
+        {
+          "family": "AuthorC",
+          "given": "Given2"
+        },
+        {
+          "family": "AuthorD",
+          "given": "Given3"
+        },
+        {
+          "family": "AuthorE",
+          "given": "Given4"
+        },
+        {
+          "family": "AuthorF",
+          "given": "Given5"
+        },
+        {
+          "family": "AuthorG",
+          "given": "Given6"
+        },
+        {
+          "family": "AuthorH",
+          "given": "Given7"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2020,
+            6,
+            1
+          ]
+        ]
+      },
+      "container-title": "Physical Review Letters",
+      "volume": "124",
+      "page": "1496-1504",
+      "issue": "25"
+    },
+    {
+      "id": "art5",
+      "type": "article-journal",
+      "title": "A twenty-five author paper",
+      "author": [
+        {
+          "family": "Person0",
+          "given": "Pat"
+        },
+        {
+          "family": "Person1",
+          "given": "Pat"
+        },
+        {
+          "family": "Person2",
+          "given": "Pat"
+        },
+        {
+          "family": "Person3",
+          "given": "Pat"
+        },
+        {
+          "family": "Person4",
+          "given": "Pat"
+        },
+        {
+          "family": "Person5",
+          "given": "Pat"
+        },
+        {
+          "family": "Person6",
+          "given": "Pat"
+        },
+        {
+          "family": "Person7",
+          "given": "Pat"
+        },
+        {
+          "family": "Person8",
+          "given": "Pat"
+        },
+        {
+          "family": "Person9",
+          "given": "Pat"
+        },
+        {
+          "family": "Person10",
+          "given": "Pat"
+        },
+        {
+          "family": "Person11",
+          "given": "Pat"
+        },
+        {
+          "family": "Person12",
+          "given": "Pat"
+        },
+        {
+          "family": "Person13",
+          "given": "Pat"
+        },
+        {
+          "family": "Person14",
+          "given": "Pat"
+        },
+        {
+          "family": "Person15",
+          "given": "Pat"
+        },
+        {
+          "family": "Person16",
+          "given": "Pat"
+        },
+        {
+          "family": "Person17",
+          "given": "Pat"
+        },
+        {
+          "family": "Person18",
+          "given": "Pat"
+        },
+        {
+          "family": "Person19",
+          "given": "Pat"
+        },
+        {
+          "family": "Person20",
+          "given": "Pat"
+        },
+        {
+          "family": "Person21",
+          "given": "Pat"
+        },
+        {
+          "family": "Person22",
+          "given": "Pat"
+        },
+        {
+          "family": "Person23",
+          "given": "Pat"
+        },
+        {
+          "family": "Person24",
+          "given": "Pat"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2018
+          ]
+        ]
+      },
+      "container-title": "The Lancet",
+      "volume": "391",
+      "page": "100-104"
+    },
+    {
+      "id": "book1",
+      "type": "book",
+      "title": "The design of everyday things",
+      "author": [
+        {
+          "family": "Norman",
+          "given": "Donald Arthur"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2013
+          ]
+        ]
+      },
+      "publisher": "Basic Books",
+      "publisher-place": "New York",
+      "edition": "2"
+    },
+    {
+      "id": "book2",
+      "type": "book",
+      "title": "The art of computer programming",
+      "author": [
+        {
+          "family": "Knuth",
+          "given": "Donald Ervin"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            1997
+          ]
+        ]
+      },
+      "publisher": "Addison-Wesley",
+      "publisher-place": "Reading, MA",
+      "edition": "3",
+      "volume": "1",
+      "number-of-volumes": "4",
+      "number-of-pages": "650"
+    },
+    {
+      "id": "book3",
+      "type": "book",
+      "title": "Edited volume on methods",
+      "editor": [
+        {
+          "family": "Smith",
+          "given": "John Andrew"
+        },
+        {
+          "family": "Jones",
+          "given": "Barbara Carol"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2015
+          ]
+        ]
+      },
+      "publisher": "Oxford University Press",
+      "publisher-place": "Oxford",
+      "edition": "1"
+    },
+    {
+      "id": "book4",
+      "type": "book",
+      "title": "Translated classic",
+      "author": [
+        {
+          "family": "Tolstoy",
+          "given": "Leo"
+        }
+      ],
+      "translator": [
+        {
+          "family": "Pevear",
+          "given": "Richard"
+        },
+        {
+          "family": "Volokhonsky",
+          "given": "Larissa"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2007
+          ]
+        ]
+      },
+      "original-date": {
+        "date-parts": [
+          [
+            1869
+          ]
+        ]
+      },
+      "publisher": "Knopf",
+      "publisher-place": "New York",
+      "edition": "11"
+    },
+    {
+      "id": "book5",
+      "type": "book",
+      "title": "An anonymous pamphlet",
+      "issued": {
+        "date-parts": [
+          [
+            1850
+          ]
+        ]
+      },
+      "publisher": "Unknown Press",
+      "edition": "21"
+    },
+    {
+      "id": "book6",
+      "type": "book",
+      "title": "Corporate report on health",
+      "author": [
+        {
+          "literal": "World Health Organization"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2022
+          ]
+        ]
+      },
+      "publisher": "WHO Press",
+      "publisher-place": "Geneva",
+      "edition": "101",
+      "collection-title": "Technical Report Series",
+      "collection-number": "1032"
+    },
+    {
+      "id": "book7",
+      "type": "book",
+      "title": "Undated work",
+      "author": [
+        {
+          "family": "Doe",
+          "given": "Jane"
+        }
+      ],
+      "publisher": "Somewhere Press"
+    },
+    {
+      "id": "book8",
+      "type": "book",
+      "title": "Particles and suffixes",
+      "author": [
+        {
+          "family": "Beethoven",
+          "given": "Ludwig",
+          "non-dropping-particle": "van"
+        },
+        {
+          "family": "Gogh",
+          "given": "Vincent",
+          "dropping-particle": "van"
+        },
+        {
+          "family": "King",
+          "given": "Martin Luther",
+          "suffix": "Jr."
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2001
+          ]
+        ]
+      },
+      "publisher": "Particle Press",
+      "edition": "12",
+      "volume": "2"
+    },
+    {
+      "id": "chap1",
+      "type": "chapter",
+      "title": "Deep learning fundamentals",
+      "author": [
+        {
+          "family": "LeCun",
+          "given": "Yann"
+        }
+      ],
+      "editor": [
+        {
+          "family": "Goodfellow",
+          "given": "Ian"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2016
+          ]
+        ]
+      },
+      "container-title": "Deep learning",
+      "publisher": "MIT Press",
+      "publisher-place": "Cambridge, MA",
+      "page": "145-189",
+      "DOI": "10.1000/ch"
+    },
+    {
+      "id": "chap2",
+      "type": "chapter",
+      "title": "A chapter with many editors",
+      "author": [
+        {
+          "family": "Garcia",
+          "given": "Maria"
+        }
+      ],
+      "editor": [
+        {
+          "family": "Smith",
+          "given": "John"
+        },
+        {
+          "family": "Jones",
+          "given": "Barbara"
+        },
+        {
+          "family": "Brown",
+          "given": "Charles"
+        }
+      ],
+      "container-author": [
+        {
+          "family": "Container",
+          "given": "Carl"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2020
+          ]
+        ]
+      },
+      "container-title": "Systems programming",
+      "publisher": "Academic Press",
+      "page": "12",
+      "edition": "2",
+      "volume": "3",
+      "chapter-number": "7"
+    },
+    {
+      "id": "conf1",
+      "type": "paper-conference",
+      "title": "Attention is all you need",
+      "author": [
+        {
+          "family": "AuthorA",
+          "given": "Given0"
+        },
+        {
+          "family": "AuthorB",
+          "given": "Given1"
+        },
+        {
+          "family": "AuthorC",
+          "given": "Given2"
+        },
+        {
+          "family": "AuthorD",
+          "given": "Given3"
+        },
+        {
+          "family": "AuthorE",
+          "given": "Given4"
+        },
+        {
+          "family": "AuthorF",
+          "given": "Given5"
+        },
+        {
+          "family": "AuthorG",
+          "given": "Given6"
+        },
+        {
+          "family": "AuthorH",
+          "given": "Given7"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2017,
+            12,
+            4
+          ]
+        ]
+      },
+      "container-title": "Advances in Neural Information Processing Systems",
+      "event-title": "NeurIPS 2017",
+      "event-place": "Long Beach, CA",
+      "page": "5998-6008",
+      "publisher": "Curran Associates",
+      "volume": "30"
+    },
+    {
+      "id": "thesis1",
+      "type": "thesis",
+      "title": "On the shape of things",
+      "author": [
+        {
+          "family": "Student",
+          "given": "Sam"
+        }
+      ],
+      "genre": "PhD dissertation",
+      "issued": {
+        "date-parts": [
+          [
+            2010
+          ]
+        ]
+      },
+      "publisher": "University of Somewhere",
+      "publisher-place": "Somewhere"
+    },
+    {
+      "id": "report1",
+      "type": "report",
+      "title": "Annual report",
+      "author": [
+        {
+          "literal": "World Health Organization"
+        }
+      ],
+      "number": "TR-2023-04",
+      "issued": {
+        "date-parts": [
+          [
+            2023,
+            4
+          ]
+        ]
+      },
+      "publisher": "Institute of Things",
+      "publisher-place": "Ottawa",
+      "URL": "https://example.org/report"
+    },
+    {
+      "id": "web1",
+      "type": "webpage",
+      "title": "How to cite a web page",
+      "author": [
+        {
+          "family": "Writer",
+          "given": "Web"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2022,
+            8,
+            21
+          ]
+        ]
+      },
+      "container-title": "Example Site",
+      "URL": "https://example.org/how-to-cite",
+      "accessed": {
+        "date-parts": [
+          [
+            2024,
+            3,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "web2",
+      "type": "webpage",
+      "title": "Undated page",
+      "URL": "https://example.org/undated",
+      "accessed": {
+        "date-parts": [
+          [
+            2023,
+            12,
+            31
+          ]
+        ]
+      }
+    },
+    {
+      "id": "news1",
+      "type": "article-newspaper",
+      "title": "City council approves budget",
+      "author": [
+        {
+          "family": "Reporter",
+          "given": "Rita"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2021,
+            5,
+            9
+          ]
+        ]
+      },
+      "container-title": "The Daily Planet",
+      "page": "A1",
+      "section": "Metro",
+      "URL": "https://example.org/news"
+    },
+    {
+      "id": "mag1",
+      "type": "article-magazine",
+      "title": "The future of work",
+      "author": [
+        {
+          "family": "Columnist",
+          "given": "Cal"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2019,
+            9
+          ]
+        ]
+      },
+      "container-title": "The Atlantic",
+      "volume": "324",
+      "issue": "2",
+      "page": "30-41"
+    },
+    {
+      "id": "season1",
+      "type": "article-journal",
+      "title": "A seasonal issue",
+      "author": [
+        {
+          "family": "Spring",
+          "given": "Sally"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2018
+          ]
+        ],
+        "season": 1
+      },
+      "container-title": "Quarterly Review",
+      "volume": "12",
+      "issue": "1",
+      "page": "5-9"
+    },
+    {
+      "id": "season2",
+      "type": "article-journal",
+      "title": "Another seasonal issue",
+      "author": [
+        {
+          "family": "Winter",
+          "given": "Will"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2018,
+            3
+          ]
+        ],
+        "season": 4
+      },
+      "container-title": "Quarterly Review",
+      "volume": "12",
+      "issue": "4"
+    },
+    {
+      "id": "range1",
+      "type": "article-journal",
+      "title": "A date range",
+      "author": [
+        {
+          "family": "Range",
+          "given": "Ray"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2019,
+            5
+          ],
+          [
+            2019,
+            7
+          ]
+        ]
+      },
+      "container-title": "Ranges",
+      "volume": "1",
+      "page": "1-2"
+    },
+    {
+      "id": "range2",
+      "type": "book",
+      "title": "A multi-year work",
+      "author": [
+        {
+          "family": "Range",
+          "given": "Ray"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2010
+          ],
+          [
+            2015
+          ]
+        ]
+      },
+      "publisher": "Long Press"
+    },
+    {
+      "id": "circa1",
+      "type": "book",
+      "title": "An old manuscript",
+      "author": [
+        {
+          "family": "Scribe",
+          "given": "Ancient"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            1500
+          ]
+        ],
+        "circa": true
+      },
+      "publisher": "Monastery"
+    },
+    {
+      "id": "literal1",
+      "type": "book",
+      "title": "Literal date",
+      "author": [
+        {
+          "family": "Literal",
+          "given": "Lou"
+        }
+      ],
+      "issued": {
+        "literal": "Spring 2010"
+      },
+      "publisher": "Lit Press"
+    },
+    {
+      "id": "fullmonths",
+      "type": "article-newspaper",
+      "title": "Every month",
+      "author": [
+        {
+          "family": "Months",
+          "given": "Mo"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2020,
+            9,
+            22
+          ]
+        ]
+      },
+      "container-title": "Monthly",
+      "accessed": {
+        "date-parts": [
+          [
+            2020,
+            6,
+            3
+          ]
+        ]
+      },
+      "URL": "https://example.org/m"
+    },
+    {
+      "id": "dataset1",
+      "type": "dataset",
+      "title": "Climate observations",
+      "author": [
+        {
+          "literal": "World Health Organization"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2021
+          ]
+        ]
+      },
+      "publisher": "Zenodo",
+      "DOI": "10.5281/zenodo.123",
+      "version": "2.1"
+    },
+    {
+      "id": "patent1",
+      "type": "patent",
+      "title": "A better mousetrap",
+      "author": [
+        {
+          "family": "Inventor",
+          "given": "Ivy"
+        }
+      ],
+      "number": "US1234567",
+      "issued": {
+        "date-parts": [
+          [
+            1999,
+            2,
+            28
+          ]
+        ]
+      }
+    },
+    {
+      "id": "hyphen1",
+      "type": "article-journal",
+      "title": "Hyphenated given names",
+      "author": [
+        {
+          "family": "Sartre",
+          "given": "Jean-Paul"
+        },
+        {
+          "family": "Lévi-Strauss",
+          "given": "Claude"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            1960
+          ]
+        ]
+      },
+      "container-title": "Les Temps Modernes",
+      "volume": "15",
+      "page": "1-30"
+    },
+    {
+      "id": "trans1",
+      "type": "article-journal",
+      "title": "Translated article",
+      "author": [
+        {
+          "family": "Author",
+          "given": "Ana"
+        }
+      ],
+      "translator": [
+        {
+          "family": "Translator",
+          "given": "Tom"
+        }
+      ],
+      "editor": [
+        {
+          "family": "Editor",
+          "given": "Ed"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2012,
+            2,
+            29
+          ]
+        ]
+      },
+      "container-title": "Translations",
+      "volume": "2",
+      "issue": "1",
+      "page": "9-10"
+    },
+    {
+      "id": "nocase1",
+      "type": "article-journal",
+      "title": "The <span class=\"nocase\">iPhone</span> and pH in DNA research",
+      "author": [
+        {
+          "family": "Case",
+          "given": "Nora"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2011
+          ]
+        ]
+      },
+      "container-title": "journal of lowercase things",
+      "volume": "3",
+      "page": "77"
+    },
+    {
+      "id": "smith2024a",
+      "type": "article-journal",
+      "title": "First article",
+      "author": [
+        {
+          "family": "Smith",
+          "given": "John"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2024
+          ]
+        ]
+      },
+      "container-title": "Nature",
+      "volume": "1"
+    },
+    {
+      "id": "smith2024b",
+      "type": "article-journal",
+      "title": "Second article",
+      "author": [
+        {
+          "family": "Smith",
+          "given": "John"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2024
+          ]
+        ]
+      },
+      "container-title": "Science",
+      "volume": "2"
+    },
+    {
+      "id": "smith2024c",
+      "type": "article-journal",
+      "title": "Third article",
+      "author": [
+        {
+          "family": "Smith",
+          "given": "Jane"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2024
+          ]
+        ]
+      },
+      "container-title": "Cell",
+      "volume": "3"
+    },
+    {
+      "id": "interview1",
+      "type": "interview",
+      "title": "On writing",
+      "author": [
+        {
+          "family": "Novelist",
+          "given": "Nia"
+        }
+      ],
+      "interviewer": [
+        {
+          "family": "Host",
+          "given": "Hal"
+        }
+      ],
+      "issued": {
+        "date-parts": [
+          [
+            2016,
+            10,
+            1
+          ]
+        ]
+      },
+      "medium": "Audio recording"
+    },
+    {
+      "id": "legal1",
+      "type": "legal_case",
+      "title": "Brown v. Board of Education",
+      "authority": "Supreme Court",
+      "volume": "347",
+      "page": "483",
+      "container-title": "U.S.",
+      "issued": {
+        "date-parts": [
+          [
+            1954
+          ]
+        ]
+      }
+    }
+  ],
+  "locators": [
+    {
+      "locator": "42",
+      "label": "page"
+    },
+    {
+      "locator": "42-45",
+      "label": "page"
+    },
+    {
+      "locator": "3",
+      "label": "chapter"
+    },
+    {
+      "locator": "2",
+      "label": "figure"
+    },
+    {
+      "locator": "4.2",
+      "label": "section"
+    },
+    {
+      "locator": "12",
+      "label": "paragraph"
+    },
+    {
+      "locator": "7",
+      "label": "line"
+    },
+    {
+      "locator": "1",
+      "label": "volume"
+    },
+    {
+      "locator": "5",
+      "label": "note"
+    },
+    {
+      "locator": "33",
+      "label": "verse"
+    },
+    {
+      "locator": "2",
+      "label": "book"
+    },
+    {
+      "locator": "9",
+      "label": "column"
+    },
+    {
+      "locator": "12r",
+      "label": "folio"
+    },
+    {
+      "locator": "4",
+      "label": "number"
+    },
+    {
+      "locator": "8",
+      "label": "opus"
+    },
+    {
+      "locator": "2",
+      "label": "part"
+    },
+    {
+      "locator": "foo",
+      "label": "sub verbo"
+    },
+    {
+      "locator": "1",
+      "label": "table"
+    },
+    {
+      "locator": "42"
+    }
+  ]
+}

@@ -42,12 +42,14 @@ describe('@citestyle/core exports', () => {
 // ── @citestyle/compiler exports ──────────────────────────────────────────────
 
 describe('@citestyle/compiler exports', () => {
-  it('exports compile, parse, resolveLocale, generate', async () => {
+  it('exports compile, parse, resolveLocale, generate, readLocaleFile, readLocaleLayer', async () => {
     const compiler = await import('../packages/compiler/src/index.js')
     expect(typeof compiler.compile).toBe('function')
     expect(typeof compiler.parse).toBe('function')
     expect(typeof compiler.resolveLocale).toBe('function')
     expect(typeof compiler.generate).toBe('function')
+    expect(typeof compiler.readLocaleFile).toBe('function')
+    expect(typeof compiler.readLocaleLayer).toBe('function')
   })
 })
 

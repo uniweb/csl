@@ -17,6 +17,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'n
 import { join, basename, extname, resolve, dirname } from 'node:path'
 import { compile } from './compile.js'
 import { parse } from './parser.js'
+import { loadLocaleFile } from './locale.js'
 
 const args = process.argv.slice(2)
 
@@ -45,8 +46,10 @@ Commands:
 
 Options (compile):
   -o, --output <path>   Output file (single input) or directory (batch mode)
-  --locale <lang>       Target locale, comma-separated for multi-locale (default: the style's
-                        default-locale, else en-US)
+  --locale <lang>       The style's default locale, comma-separated for one module per locale
+                        (default: the style's default-locale, else en-US). The compiler ships
+                        en-US, en-GB, de-DE and pt-BR; for any language, pass a locale pack from
+                        @citestyle/locales when formatting instead
   --format <esm|cjs>    Output format (default: esm)
 
 Examples:
@@ -79,6 +82,16 @@ function runCompile(args) {
 
   const isBatch = files.length > 1 || (output && isDirectory(output))
   let exitCode = 0
+
+  // A default locale the compiler has no file for resolves to en-US terms: say so, and what to do
+  for (const locale of locales) {
+    if (locale && !loadLocaleFile(locale) && !loadLocaleFile(locale.split('-')[0])) {
+      console.error(
+        `⚠ --locale ${locale}: the compiler has no ${locale} locale file, so the style's default stays en-US. ` +
+          `To format in ${locale}, pass the @citestyle/locales/${locale} pack when formatting: bibliography(item, { locale }).`,
+      )
+    }
+  }
 
   for (const file of files) {
     for (const locale of locales) {

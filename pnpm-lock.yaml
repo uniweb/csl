@@ -42,6 +42,9 @@ importers:
 
   packages/compiler:
     dependencies:
+      '@citestyle/core':
+        specifier: workspace:*
+        version: link:../core
       '@citestyle/types':
         specifier: workspace:*
         version: link:../types

@@ -37,6 +37,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@citestyle/core": "workspace:*",
     "@citestyle/types": "workspace:*",
     "@xmldom/xmldom": "^0.8.11"
   },

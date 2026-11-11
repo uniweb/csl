@@ -5,6 +5,7 @@
  * Walks the DOM into CSL-specific AST nodes.
  */
 import { DOMParser } from '@xmldom/xmldom'
+import { readLocaleLayer } from './locale-data.js'
 
 const CSL_NS = 'http://purl.org/net/xbiblio/csl'
 
@@ -93,6 +94,10 @@ function parseInfo(el) {
 
 /**
  * Parse a locale override within the style.
+ *
+ * `terms`, `dateFormats` and `styleOptions` feed the compile-time resolution of the style's default
+ * locale (./locale.js). `layer` is the same element as the format-time code reads it, applied over
+ * a locale pack (./locale-data.js).
  */
 function parseLocaleOverride(el) {
   const override = {
@@ -100,6 +105,7 @@ function parseLocaleOverride(el) {
     terms: {},
     dateFormats: {},
     styleOptions: {},
+    layer: readLocaleLayer(el),
   }
 
   for (const child of childElements(el)) {
