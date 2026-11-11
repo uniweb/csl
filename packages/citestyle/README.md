@@ -177,7 +177,7 @@ Nine widely used styles ship pre-compiled:
 ```javascript
 import * as apa from 'citestyle/styles/apa'                    // APA 7th edition
 import * as mla from 'citestyle/styles/mla'                    // MLA 9th edition
-import * as chicago from 'citestyle/styles/chicago-author-date' // Chicago 17th (author-date)
+import * as chicago from 'citestyle/styles/chicago-author-date' // Chicago 18th (author-date)
 import * as ieee from 'citestyle/styles/ieee'                  // IEEE
 import * as vancouver from 'citestyle/styles/vancouver'        // Vancouver
 import * as harvard from 'citestyle/styles/harvard'            // Harvard (Cite Them Right), in British English

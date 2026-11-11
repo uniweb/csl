@@ -1,6 +1,6 @@
 # @citestyle/styles
 
-The 10 most popular citation styles, pre-compiled and ready to import. Each style is ~3-5KB — a compiled JavaScript module that formats citations and bibliographies as pure function calls with zero runtime overhead.
+Nine popular citation styles, pre-compiled and ready to import. Each style is ~3-5KB — a compiled JavaScript module that formats citations and bibliographies as pure function calls with zero runtime overhead.
 
 These are the same styles you'd get by running the `@citestyle/compiler` on official `.csl` files, just pre-built so you can `npm install` and go.
 
@@ -18,7 +18,7 @@ Requires `@citestyle/core` as a peer dependency (installed automatically).
 |---|---|---|
 | `@citestyle/styles/apa` | American Psychological Association 7th ed. | Author-date |
 | `@citestyle/styles/mla` | Modern Language Association 9th ed. | Author-date |
-| `@citestyle/styles/chicago-author-date` | Chicago Manual of Style 17th ed. | Author-date |
+| `@citestyle/styles/chicago-author-date` | Chicago Manual of Style 18th ed. | Author-date |
 | `@citestyle/styles/harvard` | Harvard — Cite Them Right 12th ed., in British English | Author-date |
 | `@citestyle/styles/ieee` | IEEE | Numeric |
 | `@citestyle/styles/vancouver` | Vancouver | Numeric |
